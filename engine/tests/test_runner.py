@@ -14,7 +14,9 @@ import pytest
 
 from agentgym.agents.scripted import NoOpAgent, build_scripted_agent
 from agentgym.env import CodingEnv
-from agentgym.runner import main, run_episode, validate_task
+from agentgym.episode import run_episode
+from agentgym.runner import main
+from agentgym.validate import validate_task
 from agentgym.tasks import load_task
 
 # --- run_episode -------------------------------------------------------------

@@ -21,6 +21,14 @@ MAX_RECORD_CHARS = 20_000
 
 Difficulty = Literal["easy", "medium", "hard"]
 
+
+class UserFacingError(RuntimeError):
+    """An error the CLI reports as one readable line, not a traceback.
+
+    Lives here rather than in the module that raises it so the runner can catch
+    it without importing the optional LLM agent (and its optional SDK).
+    """
+
 # The only action types the environment understands.
 ACTION_TYPES = ("list_files", "read_file", "write_file", "run_tests", "submit")
 
