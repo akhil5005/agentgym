@@ -1,0 +1,9 @@
+{
+  "id": "02_slugify",
+  "title": "Turn a title into a URL slug",
+  "difficulty": "easy",
+  "category": "strings",
+  "description": "src/text.py has a function slugify(text) that should turn any title into a clean URL slug.\n\nThe rules for a slug are:\n- it is lowercase\n- accented letters become their plain ASCII equivalent, so an e-acute becomes e\n- every run of characters that is not a letter or a digit collapses into a single hyphen, so spaces, punctuation and underscores all become one hyphen\n- there is never a hyphen at the start or at the end\n- a title with no letters or digits at all produces the empty string\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/text.py.",
+  "max_steps": 15,
+  "hidden_test_count": 11
+}

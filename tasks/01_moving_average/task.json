@@ -1,0 +1,9 @@
+{
+  "id": "01_moving_average",
+  "title": "Moving average over a sliding window",
+  "difficulty": "easy",
+  "category": "off-by-one",
+  "description": "src/stats.py has a function moving_average(values, k) that should return the mean of every window of k consecutive values, left to right.\n\nFor a list of n values and a window of size k there are n - k + 1 windows, so that is how many averages the function must return. Each average is a float.\n\nThe function must raise ValueError if k is zero or negative, and also if k is larger than the number of values, because no complete window exists in that case. It must not modify the list it is given.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/stats.py.",
+  "max_steps": 15,
+  "hidden_test_count": 10
+}

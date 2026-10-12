@@ -1,0 +1,9 @@
+{
+  "id": "03_cart_defaults",
+  "title": "A shopping cart that leaks state between instances",
+  "difficulty": "easy",
+  "category": "mutable default",
+  "description": "src/cart.py has a Cart class with add(name, price, tags), remove(name) and total().\n\nEvery cart must be completely independent: creating two carts and adding an item to one must leave the other empty. Each item must own its own tags list, so appending a tag to one item never changes another item's tags. A cart may also be created from an existing list of items, and in that case changing the caller's list afterwards must not change the cart.\n\nadd stores an item as a dict with the keys name, price and tags. total() returns the sum of the prices. remove(name) deletes the first item with that name and returns True, or returns False if there is no such item.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/cart.py.",
+  "max_steps": 15,
+  "hidden_test_count": 10
+}

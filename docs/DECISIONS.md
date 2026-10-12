@@ -13,3 +13,5 @@ One line per decision: what we chose and why. Newest at the bottom.
 - **Native Windows support in the sandbox rather than requiring WSL2** — the
   author's machine is Windows, and `resource` limits degrade to a wall-clock
   timeout cleanly, so the project runs where it is actually developed.
+- **No `__init__.py` in either tests folder; unique test file basenames instead** —
+  both suites would otherwise import as a package called `tests` and collide.
