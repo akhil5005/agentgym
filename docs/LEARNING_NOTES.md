@@ -182,3 +182,67 @@ prod refuses to boot with the dev key).
    it an error means re-running `upload` on a file that partly succeeded is safe:
    the already-stored episodes are rejected individually and the rest go through,
    with no risk of double-counting every number on the leaderboard.*
+
+---
+
+## Phase 4 checkpoint — Upload commands and the LLM agent
+
+**What we built and why.** The bridge between the local engine and the backend,
+plus the agent that actually costs money. `sync-tasks` uploads only
+`task.public_dict()`, which is the structural guarantee that hidden tests and
+reference solutions never leave this machine. `upload` and `run --api` share one
+HTTP client that retries transient failures three times, treats a 409 as success
+(so re-running `upload` on a half-finished file is safe rather than
+double-counting), and never raises on a network error — a run that took two
+minutes of model time must not be lost to a dropped wifi connection. The JSONL
+file on disk stays the source of truth.
+
+`LLMAgent` exposes the five actions as five tools and drives the conversation
+by hand rather than using the SDK's tool runner, because the *environment*
+executes the tools here, not the agent. The fiddly part is parallel tool calls:
+the model can ask for three things at once, and the API requires all three
+results to come back in one user message — splitting them teaches the model to
+stop making parallel calls. So calls are queued, handed to the runner one at a
+time, and their results batched.
+
+Two things worth knowing. The spec's default model id, `claude-sonnet-5-5`, is
+not a real model and would have 404'd; the real id is `claude-sonnet-5`. And
+`runner.py` had grown past 400 lines, so it is now four modules: play an
+episode, validate a task, talk to the backend, format tables.
+
+**Commands to see it work.**
+```
+.venv/Scripts/python.exe -m uvicorn app.main:app --app-dir backend   # terminal 1
+.venv/Scripts/python.exe -m agentgym.runner sync-tasks --api http://127.0.0.1:8000 --key dev-key
+.venv/Scripts/python.exe -m agentgym.runner run --agent oracle --tasks all --out runs/oracle.jsonl --api http://127.0.0.1:8000 --key dev-key
+.venv/Scripts/python.exe -m agentgym.runner summary "runs/*.jsonl"
+curl http://127.0.0.1:8000/api/leaderboard
+```
+Real result on this machine: 9 tasks synced, 27 episodes uploaded, and
+`/api/leaderboard` shows three agents — oracle 1.000 mean reward and a 100%
+solve rate, noop 0.360, tamper 0.360 with a 100% tamper rate. Tamper matches
+noop exactly and never beats it. 360 tests pass, 1 skipped.
+
+**The LLM agent has not been run for real.** `ANTHROPIC_API_KEY` is not set on
+this machine, so the live smoke test was skipped and the LLM row stays `TBD` in
+the README. Its tool-call plumbing is covered by 23 tests against a stubbed
+client, so the wiring is verified even though the model is not.
+
+**Files to read first.** `engine/agentgym/agents/llm.py` (how an LLM is turned
+into a gym player), `engine/agentgym/api.py` (the retry and 409 policy),
+`engine/agentgym/episode.py` (the whole step loop, in twenty lines).
+
+**Two interview questions.**
+1. Why does uploading a duplicate episode count as success rather than failure?
+   *Because `upload` has to be safe to re-run. If a file of 50 episodes fails
+   at number 30, you want to run the same command again and have the first 30
+   be no-ops. Treating 409 as an error would make the retry look broken; making
+   it overwrite would risk double-counting. "Already there" is the honest
+   third answer.*
+2. The model can request several tool calls at once, but the environment takes
+   one action per step. How do you reconcile that?
+   *Queue them. The agent hands the runner one action per `next_action` call and
+   collects each observation, then sends all the results back in a single user
+   message when the queue empties. That matters beyond tidiness: the API expects
+   one result block per tool call in one message, and splitting them across
+   messages trains the model to stop making parallel calls at all.*
