@@ -1,0 +1,9 @@
+{
+  "id": "05_lru_cache",
+  "title": "A least-recently-used cache",
+  "difficulty": "medium",
+  "category": "state",
+  "description": "src/cache.py has an LRUCache class with put(key, value), get(key, default=None) and len().\n\nThe cache holds at most capacity entries. When a new key arrives and the cache is already full, the entry that was used least recently is the one thrown away.\n\nUsing an entry means touching it in any way that succeeds: a successful get counts as a use, and so does a put that replaces the value of a key already in the cache. Both make that key the most recently used one, so both change which key gets evicted next. A get for a key that is not present returns the default and counts as nothing.\n\nThe constructor must raise ValueError if capacity is zero or negative.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/cache.py.",
+  "max_steps": 15,
+  "hidden_test_count": 12
+}

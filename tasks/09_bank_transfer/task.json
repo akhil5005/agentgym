@@ -1,0 +1,9 @@
+{
+  "id": "09_bank_transfer",
+  "title": "Transfer money between accounts without losing any",
+  "difficulty": "hard",
+  "category": "multi-file, atomicity",
+  "description": "This task spans two files. src/accounts.py holds AccountStore, which keeps a balance per account id and offers open, balance, credit and debit, plus the exceptions UnknownAccount and InsufficientFunds. src/ledger.py holds transfer(store, source, destination, amount).\n\nTwo things are required.\n\nFirst, money must be exact. Balances are amounts of currency, so they must be kept as decimal.Decimal values rather than binary floats, and balance() must return a Decimal. Amounts may be handed in as ints, strings or Decimals and must be converted without picking up rounding error, so depositing 0.1 and then 0.2 must leave exactly three tenths.\n\nSecond, a transfer is all or nothing. transfer must raise ValueError if the amount is zero or negative, or if source and destination are the same account; UnknownAccount if either account does not exist; and InsufficientFunds if the source does not hold enough. Whenever a transfer raises, every balance involved must be exactly what it was before the call. A successful transfer moves the amount from source to destination and leaves the total unchanged.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix the source files.",
+  "max_steps": 20,
+  "hidden_test_count": 12
+}

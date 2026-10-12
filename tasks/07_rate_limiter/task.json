@@ -1,0 +1,9 @@
+{
+  "id": "07_rate_limiter",
+  "title": "A sliding-window rate limiter",
+  "difficulty": "hard",
+  "category": "time and state",
+  "description": "src/limiter.py has a RateLimiter class. You build it with RateLimiter(limit, window_seconds) and then call allow(key, now), where key identifies the caller and now is the current time in seconds as a number.\n\nallow returns True if this key is still under its allowance, and records the request. It returns False if the key has already used its allowance, and in that case the request is not recorded.\n\nThe allowance is per key: each key gets its own limit of requests within any window of window_seconds, and one key using up its allowance must have no effect on any other key.\n\nThe window slides and is half-open. A request made exactly window_seconds ago has already left the window and no longer counts against the key, while anything more recent than that still counts.\n\nThe constructor must raise ValueError if limit or window_seconds is zero or negative.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/limiter.py.",
+  "max_steps": 20,
+  "hidden_test_count": 12
+}

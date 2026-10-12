@@ -1,0 +1,9 @@
+{
+  "id": "06_csv_line",
+  "title": "Parse one line of CSV",
+  "difficulty": "medium",
+  "category": "parsing",
+  "description": "src/csvline.py has a function parse_csv_line(line) that splits a single line of CSV into a list of field strings.\n\nThe rules are the usual CSV ones:\n- fields are separated by commas\n- a field may be wrapped in double quotes, and inside those quotes a comma is an ordinary character, not a separator\n- inside a quoted field, two double quotes in a row stand for one real double quote in the data\n- the surrounding quotes themselves are not part of the field\n- spaces inside a quoted field are kept exactly as they are\n- an empty field is an empty string, so a line ending in a comma has an empty last field\n- a line with no commas is a single field\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/csvline.py.",
+  "max_steps": 15,
+  "hidden_test_count": 12
+}

@@ -137,13 +137,15 @@ def validate_task(task_id: str, tasks_root: Path | None = None) -> dict[str, Any
     return checks
 
 
-CHECK_NAMES = (
-    "visible_fail_on_buggy",
-    "visible_pass_with_solution",
-    "hidden_count_matches",
-    "buggy_reward_below_one",
-    "solution_reward_is_one",
+#: Each check with the short column label used in the printed table.
+CHECKS: tuple[tuple[str, str], ...] = (
+    ("visible_fail_on_buggy", "broken"),
+    ("visible_pass_with_solution", "fixable"),
+    ("hidden_count_matches", "counted"),
+    ("buggy_reward_below_one", "floor<1"),
+    ("solution_reward_is_one", "ceiling=1"),
 )
+CHECK_NAMES = tuple(name for name, _label in CHECKS)
 
 
 def command_validate(args: argparse.Namespace) -> int:
@@ -154,7 +156,15 @@ def command_validate(args: argparse.Namespace) -> int:
         print(f"No tasks found in {root or tasks_dir()}")
         return 1
 
-    header = f"{'task':<22} " + " ".join(f"{name[:14]:<15}" for name in CHECK_NAMES)
+    print(
+        "broken    = the visible tests fail on the buggy code\n"
+        "fixable   = they pass once the reference solution is applied\n"
+        "counted   = task.json's hidden_test_count matches reality\n"
+        "floor<1   = doing nothing does not already score 1.0\n"
+        "ceiling=1 = the reference solution scores exactly 1.0\n"
+    )
+    header = f"{'task':<22} " + " ".join(f"{label:<10}" for _n, label in CHECKS)
+    header += "   noop   hidden"
     print(header)
     print("-" * len(header))
 
@@ -168,8 +178,12 @@ def command_validate(args: argparse.Namespace) -> int:
         for name in CHECK_NAMES:
             ok = bool(checks[name])
             task_ok = task_ok and ok
-            cells.append(f"{'PASS' if ok else 'FAIL':<15}")
-        print(f"{task_id:<22} " + " ".join(cells))
+            cells.append(f"{'PASS' if ok else 'FAIL':<10}")
+        print(
+            f"{task_id:<22} "
+            + " ".join(cells)
+            + f"   {checks['_noop_reward']:<6} {checks['_observed_count']}"
+        )
         if not task_ok:
             all_ok = False
             failures.append((task_id, checks))

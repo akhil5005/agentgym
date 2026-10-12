@@ -15,3 +15,7 @@ One line per decision: what we chose and why. Newest at the bottom.
   timeout cleanly, so the project runs where it is actually developed.
 - **No `__init__.py` in either tests folder; unique test file basenames instead** —
   both suites would otherwise import as a package called `tests` and collide.
+- **Task 06 plants one realistic root cause (doubled-quote escaping) rather than
+  two stacked bugs** — the comma-after-a-quote cases are then genuine
+  consequences of that single bug, which reads like code a hurried engineer
+  wrote; two unrelated planted bugs would turn the task into a puzzle hunt.

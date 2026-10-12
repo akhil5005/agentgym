@@ -87,3 +87,49 @@ and scores exactly what no-op scores.
    submission with a partial score. Checking the count against a number
    committed in advance turns "the tests did not really run" into an honest
    `error` outcome instead of fake progress.*
+
+---
+
+## Phase 2 checkpoint — All nine tasks and the validate command
+
+**What we built and why.** Six more tasks (4 to 9) and the `validate` command
+that proves all nine are sound. A task is only worth having if it is *broken*
+(the visible tests fail), *fixable* (the reference solution makes them pass),
+*honestly counted* (`hidden_test_count` matches what pytest actually collects)
+and *discriminating* (doing nothing does not already score well). `validate`
+checks all five properties per task and exits non-zero on any failure, so it
+works as a CI gate.
+
+That last property turned out to matter. The first drafts of tasks 4 and 5 let a
+no-op agent score 0.727 and 0.818, because most of their hidden tests happened
+to pass on the buggy code. A leaderboard built on that would flatter any agent.
+Rewriting those hidden tests to aim at the planted bug brought the floors down
+to 0.333 and 0.5. The no-op floor across all nine is now 0.1 to 0.5.
+
+**Commands to see it work.**
+```
+.venv/Scripts/python.exe -m agentgym.runner validate --tasks all
+.venv/Scripts/python.exe -m agentgym.runner run --agent oracle --tasks all --out runs/oracle.jsonl
+.venv/Scripts/python.exe -m pytest engine/tests -q
+```
+Real result on this machine: all nine tasks pass all five checks. Oracle scores
+1.000 on all nine. 261 engine tests pass, 1 skipped, in about 1 minute 45.
+
+**Files to read first.** `engine/agentgym/runner.py` (the `validate_task`
+function is the whole quality argument in 40 lines), `tasks/09_bank_transfer/`
+(the hardest task: two files, atomicity and Decimal), any `task.json` (the shape
+of a task).
+
+**Two interview questions.**
+1. How do you know a task is actually hard, rather than just badly described?
+   *Compare the no-op floor with the oracle ceiling. The oracle must hit 1.0,
+   which proves the task is solvable and that the hidden tests agree with the
+   reference fix. The no-op floor tells you how much of the score an agent gets
+   for free. A task where the floor is 0.82 is not measuring much, no matter how
+   hard the bug looks — that is a measurement bug, and I fixed two of them.*
+2. Why does `validate` check the hidden test count against a number stored in
+   `task.json`, rather than just counting whatever pytest collects?
+   *Because the count in `task.json` is a commitment made in advance. If a
+   source file fails to import, pytest reports one test and one error; counting
+   whatever shows up would then score a crashed submission as a partial pass.
+   Comparing against a pre-committed number turns that into an honest error.*

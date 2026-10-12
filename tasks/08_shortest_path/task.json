@@ -1,0 +1,9 @@
+{
+  "id": "08_shortest_path",
+  "title": "Cheapest path through a weighted graph",
+  "difficulty": "hard",
+  "category": "algorithms",
+  "description": "src/graph.py has a function shortest_path(graph, start, goal).\n\nThe graph is a dict of dicts: graph[node][neighbour] is the cost of the directed edge from node to neighbour. Costs are numbers and may be zero.\n\nThe function returns a tuple (total_cost, path). The path is the list of nodes from start to goal inclusive, and total_cost is the sum of the edge costs along it. Out of all the routes from start to goal, it must return one of the cheapest, and the cost it reports must match the path it returns.\n\nIf start and goal are the same node the answer is (0, [start]). If the goal cannot be reached, or either node is not in the graph at all, the answer is (inf, []) using math.inf. A negative edge cost must raise ValueError. The graph itself must not be modified.\n\nSome of the tests in tests/test_visible.py are failing. Find out why and fix src/graph.py.",
+  "max_steps": 20,
+  "hidden_test_count": 12
+}
