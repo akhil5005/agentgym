@@ -133,3 +133,52 @@ of a task).
    source file fails to import, pytest reports one test and one error; counting
    whatever shows up would then score a crashed submission as a partial pass.
    Comparing against a pre-committed number turns that into an honest error.*
+
+---
+
+## Phase 3 checkpoint — Backend
+
+**What we built and why.** A FastAPI service whose only job is to store and
+serve results. It never runs agent code, which is the whole reason the project
+can be deployed publicly at all. Three tables: tasks, episodes, and the steps
+inside them (with a cascade delete, so removing an episode takes its trajectory
+with it). Reads are public so the dashboard can be shared; the two write
+endpoints need an `X-API-Key` header, compared with `secrets.compare_digest` so
+the comparison takes the same time whether the first character is wrong or the
+last. Every aggregate — leaderboard, matrix, per-task stats — is a SQL
+`GROUP BY`, not a Python loop over rows, so it keeps working past a few hundred
+episodes. One `DATABASE_URL` switches between SQLite locally and Postgres in
+production, and a validator rewrites the legacy `postgres://` prefix that
+hosting providers hand out into the psycopg 3 driver we actually install.
+
+**Commands to see it work.**
+```
+.venv/Scripts/python.exe -m pytest backend/tests -q
+.venv/Scripts/python.exe -m uvicorn app.main:app --reload --app-dir backend
+curl http://127.0.0.1:8000/api/health
+# then open http://127.0.0.1:8000/docs in a browser
+```
+Real result on this machine: 76 backend tests pass. `/api/health` returns
+`{"status":"ok"}`, `/docs` returns 200, reads return 200 without a key, and a
+`PUT` without a key returns 401.
+
+**Files to read first.** `backend/app/routers/stats.py` (the leaderboard and
+matrix aggregates — the most interesting SQL in the project),
+`backend/app/schemas.py` (the API contract and what the server refuses to
+trust), `backend/app/config.py` (settings, the Postgres URL rewrite, and why
+prod refuses to boot with the dev key).
+
+**Two interview questions.**
+1. Why is `reward` validated as being between 0 and 1 on the server when the
+   engine already guarantees it?
+   *Because the server does not trust its client. Anything holding the API key
+   can post whatever it likes, including a reward of 50 that would silently top
+   the leaderboard. The engine's guarantee protects against bugs; the schema
+   protects against a bad or compromised client. Same reason observations are
+   truncated server-side even though the engine truncates them first.*
+2. Why does uploading the same episode twice return 409 instead of overwriting
+   it or just succeeding?
+   *Because an episode is an immutable record of something that happened. Making
+   it an error means re-running `upload` on a file that partly succeeded is safe:
+   the already-stored episodes are rejected individually and the rest go through,
+   with no risk of double-counting every number on the leaderboard.*
