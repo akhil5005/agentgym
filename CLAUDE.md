@@ -22,7 +22,11 @@ SQLAlchemy, stores results), `frontend/` (Next.js dashboard).
   runner CLI. The deployed backend only stores and serves results.
 - **Never upload hidden tests or reference solutions to the backend.**
 - The project must work with no API key: the three scripted agents and the whole
-  dashboard need no LLM. Only `LLMAgent` needs `ANTHROPIC_API_KEY`.
+  dashboard need no LLM. Only the LLM agents need a key.
+- **Gemini is the project's LLM.** `GeminiAgent` (google-genai, `GEMINI_API_KEY`)
+  is what `--agent llm` and `--agent gemini` both build, and it is what every
+  evaluation and leaderboard number comes from. The Anthropic agent is kept in
+  the tree and tested, but is never used for results. Do not add Anthropic calls.
 - No secrets in git. Use env vars and `.env.example` files.
 - SQLite by default, Postgres in production, through one `DATABASE_URL`.
 
@@ -44,8 +48,10 @@ cd frontend && npm run dev                       # dashboard on :3000
 
 The LLM agent is an optional extra and the only thing needing a key:
 ```
-pip install -e "./engine[llm]"
-export ANTHROPIC_API_KEY=sk-ant-...   # PowerShell: $env:ANTHROPIC_API_KEY = "..."
+pip install -e "./engine[llm]"            # installs google-genai
+export GEMINI_API_KEY=...                 # PowerShell: $env:GEMINI_API_KEY = "..."
+python -m agentgym.runner models          # check the model is available first
+python -m agentgym.runner run --agent gemini --tasks all --out runs/gemini.jsonl
 ```
 
 ## Engine modules

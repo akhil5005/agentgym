@@ -45,7 +45,7 @@ docs/       architecture, deploy guide, decisions, learning notes
           action  │  observation  cheats)      timeout,   |
                   v                            no secrets)|
                Agent                                      |
-         noop / oracle / tamper / llm                     |
+        noop / oracle / tamper / gemini                   |
                   │                                       |
                   v   on submit: swap in hidden tests,     |
              EpisodeRecord ──> runs/*.jsonl                |
@@ -134,12 +134,12 @@ Measured on this machine, 2026-10-13. One trial per task.
 | oracle | 9 | 100% | 1.000 | 3.1 | 0% |
 | noop | 9 | 0% | 0.360 | 1.0 | 0% |
 | tamper | 9 | 0% | 0.360 | 6.0 | 100% |
-| llm | TBD | TBD | TBD | TBD | TBD |
+| gemini | TBD | TBD | TBD | TBD | TBD |
 
-**The LLM row is TBD because no `ANTHROPIC_API_KEY` was set on this machine, so
-the agent has never been run for real.** Its tool-call handling is covered by 23
-tests against a stubbed client, but no number here would be honest until someone
-runs it. See "Running the LLM agent" below.
+**The gemini row is TBD until the evaluation is run.** Its function-calling
+plumbing is covered by 34 tests against a stubbed client, but no number here
+would be honest until the model has actually played the nine tasks. See
+"Running the LLM agent" below.
 
 ### Mean reward by task and agent
 
@@ -179,12 +179,13 @@ hidden tests to aim at the planted bug brought the floors down to 0.333 and
 
 | Suite | Tests |
 | --- | ---: |
-| `engine/tests` | 284 |
+| `engine/tests` | 318 |
 | `backend/tests` | 76 |
-| **Total** | **360** |
+| **Total** | **394** |
 
 All pass. One skips: a symlink-escape test that needs permissions Windows does
-not grant by default. The frontend passes `tsc --noEmit`, `eslint`, and
+not grant by default. The 34 Gemini tests run against a stubbed client, so they
+need no API key and spend no quota. The frontend passes `tsc --noEmit`, `eslint`, and
 `next build` with no errors.
 
 ---
@@ -203,18 +204,43 @@ Useful flags: `--tasks 01_moving_average,05_lru_cache` to pick tasks,
 
 ### Running the LLM agent
 
-This is the only part that needs an API key and the only part that costs money.
+**Gemini is this project's LLM.** It is the only part that needs an API key, and
+the only part that can cost anything — it is run on Google's free tier.
 
 ```bash
-pip install -e "./engine[llm]"
-export ANTHROPIC_API_KEY=sk-ant-...          # PowerShell: $env:ANTHROPIC_API_KEY = "sk-ant-..."
-export AGENTGYM_MODEL=claude-sonnet-5        # optional; this is the default
+pip install -e "./engine[llm]"               # installs google-genai
+export GEMINI_API_KEY=...                    # PowerShell: $env:GEMINI_API_KEY = "..."
 
-python -m agentgym.runner run --agent llm --tasks 01_moving_average --out runs/llm.jsonl
+# Check which models this key can actually use before spending a run on it.
+python -m agentgym.runner models
+
+python -m agentgym.runner run --agent gemini --tasks 01_moving_average --out runs/gemini.jsonl
 ```
+
+Get a free key at <https://aistudio.google.com/apikey>. `--agent llm` is an
+alias for `--agent gemini`.
+
+Useful environment variables:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | — | Required. `GOOGLE_API_KEY` is accepted too. |
+| `AGENTGYM_GEMINI_MODEL` | `gemini-2.5-flash` | Which model to run |
+| `AGENTGYM_GEMINI_INTERVAL` | `4.0` | Seconds between calls, to stay under the free tier's per-minute limit |
+
+The agent paces its own requests, retries per-minute rate limits and transient
+server errors with backoff, and **stops outright if the daily free-tier quota is
+exhausted** rather than falling back to a paid model.
 
 Without a key, the runner prints one line explaining how to set it and exits —
 no stack trace. Every other agent and the entire dashboard work without one.
+
+### The Anthropic agent
+
+`engine/agentgym/agents/llm.py` is a working Anthropic implementation, kept and
+tested for compatibility. **It is not used for any result in this README.**
+Run it with `--agent anthropic` and `pip install -e "./engine[anthropic]"` if you
+want to compare, but Gemini is the project's selected model.
 
 ---
 
@@ -304,7 +330,8 @@ Worth knowing before you rely on any of this.
 
 - **One trial per task** in the numbers above. LLM agents are stochastic, so a
   real comparison needs `--trials 5` or more and a note about variance.
-- **The LLM agent has never been run.** See the Results section.
+- **The LLM agent's numbers come from one trial per task on a free tier.**
+  See the Results section.
 - **Nine tasks is a small benchmark.** It can tell a working agent from a broken
   one; it cannot rank two good models with any confidence.
 - **Every task is single-file-ish Python with a planted bug.** Real debugging

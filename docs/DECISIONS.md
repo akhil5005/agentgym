@@ -49,3 +49,16 @@ One line per decision: what we chose and why. Newest at the bottom.
   fast-glob). `npm audit fix --force` would downgrade eslint-config-next from 16
   to 14, which is a real regression to fix a lint-time-only issue. Nothing
   vulnerable ships to the browser.
+- **Gemini is the project's LLM; the Anthropic agent is kept but unused** — the
+  `Agent` protocol made this a new file plus one line in the runner's factory,
+  with the environment, guard, sandbox, grading, backend and dashboard all
+  unchanged. `--agent llm` is an alias for `--agent gemini` so older commands and
+  docs keep working.
+- **The google-genai SDK's automatic function calling is switched off** — the
+  *environment* executes the actions. If the SDK invoked them it would bypass the
+  guard, the step counter and the step limit, which are the whole point.
+- **A per-minute 429 is retried; a daily free-tier 429 stops the run** — waiting
+  out a per-minute limit is correct, but the only way past a daily limit is
+  billing, and the instruction is to stop rather than spend money.
+- **Gemini calls are paced (default 4s apart) rather than sprinting into a 429** —
+  free-tier quotas are per-minute, so pacing is cheaper than backing off.

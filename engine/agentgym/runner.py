@@ -6,6 +6,7 @@ Commands:
   sync-tasks  upload task metadata to the backend (never hidden tests)
   upload      send a saved JSONL file to the backend
   summary     print Markdown tables from saved JSONL files
+  models      list the Gemini models this API key can use
 
 Everything that executes agent code lives on this side of the wall. The backend
 only ever receives finished results.
@@ -31,6 +32,12 @@ from agentgym.validate import command_validate
 __all__ = ["run_episode", "build_parser", "main"]
 
 SCRIPTED_AGENTS = ("noop", "oracle", "tamper")
+
+#: Gemini is the project's LLM. "llm" is kept as an alias for it so older
+#: commands and docs keep working. The Anthropic agent is still in the tree
+#: and still tested, but nothing here selects it unless you name it.
+LLM_AGENTS = ("gemini", "llm", "anthropic")
+DEFAULT_LLM = "gemini"
 
 
 
@@ -163,6 +170,43 @@ def command_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+# --- models ------------------------------------------------------------------
+
+
+def command_models(args: argparse.Namespace) -> int:
+    """List the Gemini models this API key can actually use.
+
+    Run this before an evaluation: model names and free-tier availability both
+    change, and a benchmark that fails twenty minutes in because the model id
+    was stale has wasted twenty minutes.
+    """
+    from agentgym.agents.gemini import DEFAULT_MODEL, list_usable_models
+
+    rows = list_usable_models()
+    flash = [row for row in rows if "flash" in row[0]]
+
+    print(f"{len(rows)} model(s) usable for generateContent with this key.")
+    print("\nFlash models (preferred on the free tier):")
+    for name, label in flash:
+        marker = "   <- current default" if name == DEFAULT_MODEL else ""
+        print(f"  {name:<42} {label}{marker}")
+
+    if args.all:
+        flash_names = {name for name, _ in flash}
+        print("\nEverything else:")
+        for name, label in rows:
+            if name not in flash_names:
+                print(f"  {name:<42} {label}")
+
+    if DEFAULT_MODEL in {name for name, _ in rows}:
+        print(f"\nDefault model {DEFAULT_MODEL!r} is available.")
+        return 0
+
+    print(f"\nWARNING: default model {DEFAULT_MODEL!r} is not in this key's list.")
+    print("Set AGENTGYM_GEMINI_MODEL to one of the names above.")
+    return 1
+
+
 def _build_client(args: argparse.Namespace) -> BackendClient | None:
     """A client when both --api and --key were given, otherwise None."""
     api = getattr(args, "api", None)
@@ -175,14 +219,18 @@ def _build_client(args: argparse.Namespace) -> BackendClient | None:
 
 
 def _build_agent(name: str, task: Task) -> Any:
-    """Make an agent by CLI name, importing the LLM agent only if asked.
+    """Make an agent by CLI name, importing an LLM agent only if asked.
 
-    The lazy import matters: the Anthropic SDK is an optional dependency, and
-    the scripted agents must keep working when it is not installed.
+    The lazy imports matter: both SDKs are optional dependencies, and the
+    scripted agents must keep working when neither is installed.
     """
     if name in SCRIPTED_AGENTS:
         return build_scripted_agent(name, task)
-    if name == "llm":
+    if name in ("gemini", "llm"):
+        from agentgym.agents.gemini import GeminiAgent
+
+        return GeminiAgent()
+    if name == "anthropic":
         from agentgym.agents.llm import LLMAgent
 
         return LLMAgent()
@@ -205,7 +253,12 @@ def build_parser() -> argparse.ArgumentParser:
     validate.set_defaults(func=command_validate)
 
     run = subparsers.add_parser("run", help="play episodes")
-    run.add_argument("--agent", required=True, choices=[*SCRIPTED_AGENTS, "llm"])
+    run.add_argument(
+        "--agent",
+        required=True,
+        choices=[*SCRIPTED_AGENTS, *LLM_AGENTS],
+        help=f"scripted agent, or an LLM ({DEFAULT_LLM} is the default LLM)",
+    )
     run.add_argument("--tasks", default="all", help="all, or id1,id2")
     run.add_argument("--trials", type=int, default=1, help="episodes per task")
     run.add_argument("--out", required=True, help="output JSONL path")
@@ -227,6 +280,12 @@ def build_parser() -> argparse.ArgumentParser:
     upload.add_argument("--api", required=True, help="backend URL")
     upload.add_argument("--key", required=True, help="backend X-API-Key")
     upload.set_defaults(func=command_upload)
+
+    models = subparsers.add_parser(
+        "models", help="list the Gemini models this API key can use"
+    )
+    models.add_argument("--all", action="store_true", help="also list non-Flash models")
+    models.set_defaults(func=command_models)
 
     summary = subparsers.add_parser("summary", help="print Markdown result tables")
     summary.add_argument("files", nargs="+", help="JSONL paths or patterns")

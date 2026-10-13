@@ -12,8 +12,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The LLM agent is optional so the whole project works with no API key.
-llm = ["anthropic>=0.40"]
+# The LLM agents are optional so the whole project works with no API key.
+# Gemini is the project's LLM; `llm` installs it.
+llm = ["google-genai>=2.0"]
+gemini = ["google-genai>=2.0"]
+# The Anthropic agent is kept for compatibility but is not used for any
+# evaluation or leaderboard result. Install it only if you want to run it.
+anthropic = ["anthropic>=0.40"]
 dev = ["pytest>=8.0"]
 
 [tool.setuptools.packages.find]

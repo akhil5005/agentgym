@@ -5,11 +5,16 @@ import type { LeaderboardRow } from "@/lib/types";
 
 import { EmptyState, TableScroll } from "./layout-bits";
 
-/** Scripted agents are reference points, not competitors — say which is which. */
+/**
+ * Scripted agents are reference points, not competitors — say which is which,
+ * so a reader can tell the baselines apart from the model being measured.
+ */
 const ROLE: Record<string, string> = {
   oracle: "ceiling — applies the reference fix, must score 1.000",
   noop: "floor — submits immediately, scores what the bug already passes",
   tamper: "control — only tries to cheat, must never beat noop",
+  gemini: "the model under test — reads, edits and runs the tests itself",
+  anthropic: "alternative LLM, kept for comparison; not the default",
 };
 
 export function Leaderboard({ rows }: { rows: LeaderboardRow[] }) {
