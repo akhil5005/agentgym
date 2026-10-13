@@ -138,7 +138,15 @@ something:
 | `engine/agentgym/guard.py` | Decide whether a `write_file` is allowed. |
 | `engine/agentgym/sandbox.py` | Run pytest with limits and a stripped environment. |
 | `engine/agentgym/env.py` | `CodingEnv`: the step loop, grading, outcome labels. |
+| `engine/agentgym/episode.py` | Play one episode from reset to done. |
+| `engine/agentgym/validate.py` | The five health checks that prove a task is sound. |
+| `engine/agentgym/api.py` | HTTP client for uploading results. Retries, never raises. |
+| `engine/agentgym/summary.py` | Turn saved run files into Markdown tables. |
 | `engine/agentgym/agents/` | The agent protocol, three scripted agents, the LLM agent. |
-| `engine/agentgym/runner.py` | CLI: `validate`, `run`, `sync-tasks`, `upload`, `summary`. |
+| `engine/agentgym/runner.py` | CLI wiring: `validate`, `run`, `sync-tasks`, `upload`, `summary`. |
 | `backend/app/` | FastAPI: store and serve episodes, leaderboard, matrix. |
 | `frontend/` | Next.js dashboard: leaderboard, results matrix, replay viewer. |
+
+The engine modules are deliberately small and single-purpose. If you are reading
+this to understand the project, `episode.py` is the twenty lines that matter:
+everything else is setup, storage, or presentation around that loop.

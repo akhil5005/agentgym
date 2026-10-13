@@ -305,3 +305,60 @@ and the null-instead-of-throw policy), `frontend/src/components/replay-viewer.ts
    to 1 with no meaningful midpoint, and a diverging scale would imply one. Cells
    with no data show an em dash so "not attempted" never looks like "scored
    zero".*
+
+---
+
+## Phase 6 checkpoint — Docs and the final check
+
+**What we built and why.** The README, the deploy guide, and the CV bullets —
+plus a fresh-clone test that proved the README's commands actually work rather
+than just looking like they would.
+
+The README's job is to be honest. It reports the real measured numbers, and
+where a number does not exist it says so and why: the LLM row is `TBD` because
+no API key was ever set on this machine, and a made-up figure there would be
+worse than a gap. It also says plainly what the project does *not* do — one
+trial per task, nine tasks is too few to rank two good models, every bug is
+planted rather than found in the wild, and the sandbox is not a security
+boundary. A limitations section you wrote yourself is worth more in an interview
+than one the interviewer finds for you.
+
+The deploy guide covers Neon, Render and Vercel with no Docker, and leads with
+the thing that matters: **episodes still run on your own machine**. Nothing you
+deploy ever executes agent-written code.
+
+**Commands to see it work.**
+```
+python -m agentgym.runner validate --tasks all
+pytest
+cd frontend && npx tsc --noEmit && npm run lint && npm run build
+```
+Real result: all nine tasks pass all five checks; 360 tests pass with 1 skip;
+the frontend is clean on all three gates. A fresh `git clone` into an empty
+directory, followed by the README's quick start verbatim, installed cleanly,
+validated, ran all three scripted agents, printed the summary tables, served
+`/api/health` and `/docs`, synced 9 tasks, uploaded 6 episodes, and built the
+frontend — with no API key and no edits.
+
+That fresh-clone run also caught a real bug: `frontend/.env.example` had never
+been created (an earlier command ran from the wrong directory), and Next's own
+generated `.gitignore` would have excluded it anyway.
+
+**Files to read first.** `README.md` (especially Results and Limitations),
+`docs/ARCHITECTURE.md` (the diagram and the trusted/untrusted split),
+`docs/DECISIONS.md` (every choice and its reason, one line each).
+
+**Two interview questions.**
+1. Your README has a `TBD` in the results table. Why not just leave the row out?
+   *Because the absence is the finding. The harness is built and tested and the
+   row is there waiting; what is missing is a key and a budget, not code. Hiding
+   the row would imply the work was never scoped, and filling it with a guess
+   would be worse — every other number in that table is reproducible by running
+   one command, and I would rather one honest gap than one number nobody can
+   reproduce.*
+2. Why bother with a fresh-clone test when all the tests already pass?
+   *Because the test suite runs in an environment I had already set up by hand,
+   so it cannot catch anything about the setup itself — a file I created but
+   never committed, a path that only works from one directory, a dependency I
+   installed months ago and forgot to declare. It found exactly that class of
+   bug: a config example that existed on my disk and in no clone.*

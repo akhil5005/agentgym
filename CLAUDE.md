@@ -37,9 +37,27 @@ pip install -e "./engine[dev]" -r backend/requirements.txt
 pytest                                           # both test suites
 python -m agentgym.runner validate               # check all 9 tasks
 python -m agentgym.runner run --agent oracle --tasks all --out runs/oracle.jsonl
+python -m agentgym.runner summary "runs/*.jsonl"   # Markdown result tables
 uvicorn app.main:app --reload --app-dir backend  # backend on :8000
 cd frontend && npm run dev                       # dashboard on :3000
 ```
+
+The LLM agent is an optional extra and the only thing needing a key:
+```
+pip install -e "./engine[llm]"
+export ANTHROPIC_API_KEY=sk-ant-...   # PowerShell: $env:ANTHROPIC_API_KEY = "..."
+```
+
+## Engine modules
+Keep them small and single-purpose. `env.py` is the step loop and grading,
+`episode.py` plays one episode, `guard.py` refuses cheats, `sandbox.py` runs
+pytest with limits, `validate.py` proves a task is sound, `api.py` uploads,
+`summary.py` formats tables, and `runner.py` is only CLI wiring.
+
+## Frontend
+After adding a route, run `npx next typegen` so the generated `PageProps<"/...">`
+helpers know about it. Pages that read the API need `export const instant = false`
+(Next 16 will not prerender a route that reads uncached data).
 
 ## Import conventions
 - Engine is an installed editable package: `from agentgym.env import CodingEnv`.
