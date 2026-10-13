@@ -35,3 +35,17 @@ One line per decision: what we chose and why. Newest at the bottom.
 - **The runner expands `runs/*.jsonl` itself** — PowerShell and cmd.exe do not
   expand globs before handing arguments to a program, so the documented command
   would otherwise match nothing on the author's own machine.
+- **Frontend colour is driven by CSS variables, not Tailwind `dark:` variants** —
+  one set of token names is redefined under `prefers-color-scheme: dark`, so a
+  component can never style one theme and forget the other.
+- **The matrix heatmap colours by mean reward, not solve rate** — with one trial
+  per cell a solve rate is only ever 0 or 1, which throws away the difference
+  between a 0.1 and a 0.9. The number shown is the number the colour encodes.
+- **Data pages set `export const instant = false`** — Next 16's Cache Components
+  refuses to prerender a route that reads uncached data. These pages must show
+  current results, so blocking on the API is the correct behaviour.
+- **`npm audit` reports 5 high findings and they are left alone** — all are
+  dev-only transitive dependencies of `eslint-config-next` (braces, micromatch,
+  fast-glob). `npm audit fix --force` would downgrade eslint-config-next from 16
+  to 14, which is a real regression to fix a lint-time-only issue. Nothing
+  vulnerable ships to the browser.

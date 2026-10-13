@@ -246,3 +246,62 @@ into a gym player), `engine/agentgym/api.py` (the retry and 409 policy),
    message when the queue empties. That matters beyond tidiness: the API expects
    one result block per tool call in one message, and splitting them across
    messages trains the model to stop making parallel calls at all.*
+
+---
+
+## Phase 5 checkpoint — The dashboard
+
+**What we built and why.** Five pages in Next.js: an overview with the
+leaderboard and a task-by-agent heatmap, a task list, a task detail page with
+its brief and episodes, the replay viewer, and an about page that explains the
+whole idea in plain language. Every page is a server component that reads the
+API on each request — a cached leaderboard that does not change after you upload
+a run would be worse than a slightly slower one.
+
+Three decisions worth defending. **Colour is never the only signal**: every
+heatmap cell prints its number, every badge prints its word, and a cell that was
+never attempted shows an em dash rather than 0.000, because "not tried" and
+"scored zero" are different facts. **Every colour is a CSS variable** redefined
+under `prefers-color-scheme: dark`, so a component cannot style light mode and
+forget dark. And **a failed fetch returns `null` instead of throwing**, so when
+the backend is down you get a panel naming the exact command to start it rather
+than a stack trace — which is by far the most likely thing to go wrong for
+someone cloning this.
+
+The replay viewer is the one client component, because it holds the
+selected-step state. It has a timeline coloured by action type, a step list, and
+left/right arrow keys, with blocked writes shown in red everywhere they appear.
+
+**Commands to see it work.**
+```
+uvicorn app.main:app --reload --app-dir backend     # terminal 1
+cd frontend && npm run dev                          # terminal 2 → :3000
+cd frontend && npx tsc --noEmit && npm run lint && npm run build
+```
+Real result on this machine: `tsc` zero errors, `eslint` clean, `next build`
+succeeds. All five pages render the real 27 episodes from Phase 4, the heatmap
+shows oracle at 1.000 against noop and tamper at 0.360, and the tamper replay
+shows five blocked writes with the guard's refusal text. Arrow keys step through
+the trajectory and stop correctly at both ends. Stopping the backend swaps every
+page for the "start the API like this" panel.
+
+**Files to read first.** `frontend/src/lib/api.ts` (every call to the backend,
+and the null-instead-of-throw policy), `frontend/src/components/replay-viewer.tsx`
+(the trajectory UI and the keyboard handling),
+`frontend/src/app/globals.css` (the colour tokens both themes share).
+
+**Two interview questions.**
+1. Why is the dashboard mostly server components, with only the replay viewer
+   marked `"use client"`?
+   *Because everything else just reads data and renders it — doing that on the
+   server means no loading spinner, no API call from the browser, and no need to
+   expose the API to the user's network at all. The replay viewer is the only
+   part with genuine client state (which step is selected), so it is the only
+   part that needs to ship JavaScript.*
+2. Your heatmap colours cells by score. What did you do about accessibility?
+   *The number is printed in every cell, so colour is redundant rather than
+   load-bearing — it reads fine in greyscale or with colour-blindness. I used a
+   single-hue sequential scale rather than red-to-green, because reward runs 0
+   to 1 with no meaningful midpoint, and a diverging scale would imply one. Cells
+   with no data show an em dash so "not attempted" never looks like "scored
+   zero".*
