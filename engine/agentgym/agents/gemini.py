@@ -31,9 +31,18 @@ from typing import Any
 
 from agentgym.models import MAX_RECORD_CHARS, UserFacingError, truncate
 
-#: A free-tier Flash model. Verified against `client.models.list()` before the
-#: evaluation runs; override with AGENTGYM_GEMINI_MODEL.
-DEFAULT_MODEL = "gemini-2.5-flash"
+#: A current free-tier Flash model. Override with AGENTGYM_GEMINI_MODEL.
+#:
+#: Verify with `runner models`, which *probes* this model rather than trusting
+#: the catalogue: `models.list()` still advertises `gemini-2.5-flash`, but
+#: calling it returns 404 "no longer available to new users". A model being
+#: listed is not the same as a model you can call.
+#:
+#: Flash-Lite, not plain Flash, because the free tier is what has to fit: the
+#: full Flash models allow only 20 requests per day, and one task costs 7-11
+#: calls. 3.8/3.7-flash and flash-latest were also returning 503 "high demand".
+#: This is the model the README's results were measured on.
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 #: Free-tier quotas are per-minute, so we pace calls instead of sprinting into a
 #: 429 on every episode. Override with AGENTGYM_GEMINI_INTERVAL.
@@ -329,6 +338,7 @@ class GeminiAgent:
         Stops outright if the free-tier quota is exhausted: the instruction is
         to stop rather than move to a paid model.
         """
+        import httpx
         from google.genai import errors
 
         self._pace()
@@ -359,6 +369,13 @@ class GeminiAgent:
                     # request again.
                     raise
             except errors.ServerError as exc:
+                # 503 "high demand" is common on popular Flash models and is
+                # exactly what backoff is for.
+                last_error = exc
+            except httpx.HTTPError as exc:
+                # DNS hiccups and dropped connections surface as raw httpx
+                # errors, not SDK errors. A run that has already spent minutes
+                # of quota should not die because a name lookup blipped.
                 last_error = exc
 
             if attempt < len(BACKOFF_SECONDS):
@@ -405,6 +422,46 @@ class GeminiAgent:
             {**self.token_usage, "api_calls": self.api_calls},
             separators=(",", ":"),
         )
+
+
+def verify_model(model: str) -> tuple[bool, str]:
+    """Actually call a model, to find out whether this key can use it.
+
+    `models.list()` is not a reliable answer: it still advertises models that
+    return 404 "no longer available to new users" when you call them. The only
+    honest check is a real request, so this sends the cheapest possible one.
+    """
+    from google import genai
+    from google.genai import errors
+    from google.genai import types
+
+    client = genai.Client(api_key=read_api_key())
+    try:
+        client.models.generate_content(
+            model=model,
+            contents="hi",
+            config=types.GenerateContentConfig(max_output_tokens=1),
+        )
+    except errors.ClientError as exc:
+        return False, f"HTTP {getattr(exc, 'code', '?')}: {_first_line(exc)}"
+    except errors.ServerError as exc:
+        # Transient; the model itself is probably fine.
+        return True, f"reachable (server busy: {_first_line(exc)})"
+    return True, "usable"
+
+
+def _first_line(error: Exception) -> str:
+    """The useful sentence out of an SDK error, without the JSON noise."""
+    text = str(error)
+    message = text
+    if "'message':" in text:
+        start = text.index("'message':") + len("'message':")
+        message = text[start:].lstrip(" '\"")
+        for terminator in ("', 'status'", '", "status"', "', '", '", "'):
+            if terminator in message:
+                message = message[: message.index(terminator)]
+                break
+    return message.strip().strip("'\"")[:300]
 
 
 def list_usable_models() -> list[tuple[str, str]]:

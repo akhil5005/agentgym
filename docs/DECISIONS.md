@@ -62,3 +62,28 @@ One line per decision: what we chose and why. Newest at the bottom.
   billing, and the instruction is to stop rather than spend money.
 - **Gemini calls are paced (default 4s apart) rather than sprinting into a 429** —
   free-tier quotas are per-minute, so pacing is cheaper than backing off.
+- **Gemini model is `gemini-3.6-flash`, chosen by probing rather than by name** —
+  `models.list()` advertises 45 usable models, but calling `gemini-2.5-flash`
+  (the obvious free-tier Flash choice) returns 404 "no longer available to new
+  users". Google's suggested replacement, `gemini-3.8-flash`, plus `3.7-flash`
+  and `flash-latest`, were all returning 503 "high demand". `3.6-flash` is the
+  newest full Flash model that answered reliably. Being listed is not the same
+  as being callable, so `runner models` now sends a real one-token request
+  instead of trusting the catalogue.
+- **Raw `httpx` errors are retried alongside SDK errors** — a transient DNS
+  failure surfaced as `httpx.ConnectError`, which the SDK does not wrap. A run
+  that has already spent minutes of quota should not die because a name lookup
+  blipped.
+- **An agent crash now attaches its error to the final step** — `run_episode`
+  built an error observation and then threw it away, because `env.step()`
+  overwrote the variable before it was recorded. The first Gemini smoke test
+  failed with a 404 and the episode log showed only the grading output, which
+  made a configuration error look like a bad model.
+- **The default model is `gemini-3.5-flash-lite`, chosen by free-tier capacity** —
+  the full Flash models allow 20 requests per *day* on the free tier, and one
+  task costs 7-11 calls, so no plain Flash model can complete a nine-task
+  benchmark in a day. Flash-Lite has enough daily quota for the whole run, which
+  is what makes a single-model, reproducible result possible at all.
+- **The smoke run on `gemini-3.6-flash` was deleted rather than uploaded** —
+  it was a different model, and mixing models inside one `gemini` leaderboard
+  row would report a number that no single model actually scored.

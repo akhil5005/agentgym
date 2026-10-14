@@ -180,15 +180,19 @@ def command_models(args: argparse.Namespace) -> int:
     change, and a benchmark that fails twenty minutes in because the model id
     was stale has wasted twenty minutes.
     """
-    from agentgym.agents.gemini import DEFAULT_MODEL, list_usable_models
+    import os
+
+    from agentgym.agents.gemini import DEFAULT_MODEL, list_usable_models, verify_model
+
+    wanted = os.environ.get("AGENTGYM_GEMINI_MODEL", DEFAULT_MODEL)
 
     rows = list_usable_models()
     flash = [row for row in rows if "flash" in row[0]]
 
-    print(f"{len(rows)} model(s) usable for generateContent with this key.")
+    print(f"{len(rows)} model(s) listed for generateContent with this key.")
     print("\nFlash models (preferred on the free tier):")
     for name, label in flash:
-        marker = "   <- current default" if name == DEFAULT_MODEL else ""
+        marker = "   <- selected" if name == wanted else ""
         print(f"  {name:<42} {label}{marker}")
 
     if args.all:
@@ -198,12 +202,17 @@ def command_models(args: argparse.Namespace) -> int:
             if name not in flash_names:
                 print(f"  {name:<42} {label}")
 
-    if DEFAULT_MODEL in {name for name, _ in rows}:
-        print(f"\nDefault model {DEFAULT_MODEL!r} is available.")
+    # Being listed is not the same as being callable: the catalogue still
+    # advertises models that 404 with "no longer available to new users". So
+    # ask the model itself.
+    print(f"\nProbing {wanted!r} with a real request...")
+    ok, detail = verify_model(wanted)
+    if ok:
+        print(f"  OK - {detail}")
         return 0
 
-    print(f"\nWARNING: default model {DEFAULT_MODEL!r} is not in this key's list.")
-    print("Set AGENTGYM_GEMINI_MODEL to one of the names above.")
+    print(f"  FAILED - {detail}")
+    print("\nSet AGENTGYM_GEMINI_MODEL to a model that works, e.g. one listed above.")
     return 1
 
 

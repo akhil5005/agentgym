@@ -1,11 +1,12 @@
 # CV bullets
 
-Filled in from the real runs recorded in the README on 2026-10-13. **Do not
+Filled in from the real runs recorded in the README on 2026-10-14. **Do not
 edit a number here without re-running the command that produces it** — an
 interviewer who asks "how did you measure that?" should get a command, not a
 shrug.
 
-Anything still in `<angle brackets>` has not been measured yet.
+Model evaluated: `gemini-3.5-flash-lite`, on Google's free tier, one trial per
+task.
 
 ---
 
@@ -15,7 +16,17 @@ Anything still in `<angle brackets>` has not been measured yet.
 > FastAPI, Next.js): 9 benchmark tasks where an agent debugs a real codebase and
 > is graded on 10–12 hidden tests it never sees, with a sandboxed executor and
 > an anti-reward-hacking guard that blocked 100% of 45 scripted cheat attempts.
-> 360 tests.
+> 394 tests.
+
+> **Benchmarked Gemini 3.5 Flash-Lite end to end**: 0.990 mean reward and 8/9
+> tasks solved, against a measured no-op floor of 0.360 and an oracle ceiling of
+> 1.000 — so the score is anchored at both ends rather than quoted in isolation.
+
+> **Caught a real generalisation failure the visible tests missed.** On the one
+> task Gemini did not solve, its fix passed every test the agent could run and
+> failed a hidden edge case: it used `[^\w]+` to split a URL slug, and `\w`
+> matches the underscore, so `snake_case_name` was returned unchanged. That is
+> the hidden-test design paying for itself in one regex.
 
 > **Designed and validated the benchmark itself, not just the harness.** Each
 > task is automatically checked for five properties — broken, fixable, honestly
@@ -30,35 +41,19 @@ Anything still in `<angle brackets>` has not been measured yet.
 
 ---
 
-## Needs a real LLM run first
-
-Set `ANTHROPIC_API_KEY`, run
-`python -m agentgym.runner run --agent llm --tasks all --trials 5 --out runs/llm.jsonl`,
-then `python -m agentgym.runner summary "runs/*.jsonl"` and fill these in.
-
-> **Benchmarked `<model>` on 9 debugging tasks**, scoring `<X>` mean reward
-> against a no-op floor of 0.360 and an oracle ceiling of 1.000, solving
-> `<N>`/9 tasks outright across `<T>` trials per task.
-
-> **Measured where coding agents fail**: `<model>` solved `<N>`/3 easy tasks but
-> `<N>`/3 hard ones, with `<X>%` of failures being fixes that passed the visible
-> tests and failed the hidden edge cases.
-
----
-
 ## Talking points
-
-Numbers that make the project concrete in conversation:
 
 | Claim | Where it comes from |
 | --- | --- |
 | 9 tasks, 3 difficulty levels, 10–12 hidden tests each | `tasks/*/task.json` |
-| No-op floor 0.360, oracle ceiling 1.000 | `runner summary "runs/*.jsonl"` |
-| 45 cheat attempts, all blocked (5 per task x 9 tasks) | tamper agent's `tamper_attempts` |
-| 360 tests, 284 engine + 76 backend | `pytest` |
+| Gemini 0.990 mean reward, 8/9 solved, 7.4 mean steps | `runner summary "runs/*.jsonl"` |
+| No-op floor 0.360, oracle ceiling 1.000 | same command |
+| 45 cheat attempts, all blocked (5 per task × 9 tasks) | tamper agent's `tamper_attempts` |
+| Gemini made 0 blocked writes across 9 tasks | its `tamper_attempts` is 0 everywhere |
+| 394 tests, 318 engine + 76 backend | `pytest` |
 | Runs with no API key | the three scripted agents and the whole dashboard |
 
-## The two questions to be ready for
+## The three questions to be ready for
 
 **"How do you know an agent cannot cheat?"** Do not answer with the guard's
 feature list. Answer that there is an agent whose only job is to cheat, it runs
@@ -66,8 +61,14 @@ on every task, and the test suite asserts its reward never exceeds the no-op
 agent's. Then be honest that the guard is static analysis, not a sandbox, and
 that the real control is that untrusted code only ever runs locally.
 
-**"What is wrong with this benchmark?"** Have an answer ready — one trial per
-task so far, nine tasks is too few to rank two good models, every bug is planted
-rather than found in the wild, and grading is pass/fail per test so a
-nearly-correct fix scores the same as a bad one. The Limitations section of the
-README lists the rest.
+**"Gemini scored 0.990. Is your benchmark too easy?"** Yes, and say so first.
+Nine tasks with a capable model is close to saturated — it separates a working
+agent from a broken one, not two good models. The useful signal was the *shape*
+of the one failure, not the headline average. Harder tasks, more trials, and a
+variance figure are what it would take to rank models.
+
+**"What else is wrong with it?"** One trial per task, every bug is planted
+rather than found in the wild, grading is pass/fail per test so a nearly-correct
+fix scores like a bad one, and only one model has actually been measured. The
+README's Limitations section lists the rest — having written it yourself is the
+point.

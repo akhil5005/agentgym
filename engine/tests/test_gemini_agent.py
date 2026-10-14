@@ -151,10 +151,10 @@ def test_default_model_is_a_flash_model(monkeypatch) -> None:
 
 def test_model_comes_from_the_environment(monkeypatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "fake")
-    monkeypatch.setenv("AGENTGYM_GEMINI_MODEL", "gemini-2.0-flash")
+    monkeypatch.setenv("AGENTGYM_GEMINI_MODEL", "gemini-3.5-flash")
     from agentgym.agents.gemini import GeminiAgent
 
-    assert GeminiAgent().model == "gemini-2.0-flash"
+    assert GeminiAgent().model == "gemini-3.5-flash"
 
 
 def test_automatic_function_calling_is_disabled(monkeypatch) -> None:

@@ -11,7 +11,7 @@ import uuid
 from typing import Any
 
 from agentgym.env import CodingEnv
-from agentgym.models import EpisodeRecord, utc_now_iso
+from agentgym.models import EpisodeRecord, UserFacingError, utc_now_iso
 
 
 # --- running one episode -----------------------------------------------------
@@ -32,13 +32,22 @@ def run_episode(
     observation = reset.observation
     final_reward = 0.0
 
+    agent_error: str | None = None
+
     while True:
         try:
             action = agent.next_action(observation)
+        except UserFacingError:
+            # A missing key or an exhausted quota is a setup problem, not an
+            # agent failure. Let it stop the run rather than recording a
+            # meaningless 0.0 against the model.
+            raise
         except Exception as exc:  # noqa: BLE001 - an agent crash must not lose the episode
             # Submit so the episode is still graded and stored, with the crash
-            # visible in the trajectory instead of lost in a stack trace.
-            observation = f"ERROR: the agent raised {type(exc).__name__}: {exc}"
+            # recorded rather than lost. `observation` is about to be
+            # overwritten by the submit's own result, so keep the message
+            # separately and attach it to the finished record.
+            agent_error = f"{type(exc).__name__}: {exc}"
             action = {"type": "submit"}
 
         result = env.step(action)
@@ -46,6 +55,13 @@ def run_episode(
         if result.done:
             final_reward = result.reward
             break
+
+    if agent_error is not None and env.steps:
+        # Make the crash visible where someone replaying the episode will
+        # actually look: on the step that ended it.
+        last = env.steps[-1]
+        last.observation = f"AGENT ERROR: {agent_error}\n\n{last.observation}"
+        last.error = True
 
     info = env.final_info
     return EpisodeRecord(
