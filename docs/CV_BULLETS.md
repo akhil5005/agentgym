@@ -1,6 +1,6 @@
 # CV bullets
 
-Filled in from the real runs recorded in the README on 2026-10-14. **Do not
+Filled in from the real runs recorded in the README on 2026-10-13 (UTC). **Do not
 edit a number here without re-running the command that produces it** — an
 interviewer who asks "how did you measure that?" should get a command, not a
 shrug.
@@ -16,7 +16,7 @@ task.
 > FastAPI, Next.js): 9 benchmark tasks where an agent debugs a real codebase and
 > is graded on 10–12 hidden tests it never sees, with a sandboxed executor and
 > an anti-reward-hacking guard that blocked 100% of 45 scripted cheat attempts.
-> 394 tests.
+> 396 tests.
 
 > **Benchmarked Gemini 3.5 Flash-Lite end to end**: 0.990 mean reward and 8/9
 > tasks solved, against a measured no-op floor of 0.360 and an oracle ceiling of
@@ -50,7 +50,7 @@ task.
 | No-op floor 0.360, oracle ceiling 1.000 | same command |
 | 45 cheat attempts, all blocked (5 per task × 9 tasks) | tamper agent's `tamper_attempts` |
 | Gemini made 0 blocked writes across 9 tasks | its `tamper_attempts` is 0 everywhere |
-| 394 tests, 318 engine + 76 backend | `pytest` |
+| 396 tests, 318 engine + 78 backend | `pytest` |
 | Runs with no API key | the three scripted agents and the whole dashboard |
 
 ## The three questions to be ready for

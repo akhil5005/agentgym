@@ -136,6 +136,26 @@ def test_matrix_cell_values_are_exact(seeded) -> None:
     assert cells[("t1", "tamper")]["mean_reward"] == 0.0
 
 
+def test_matrix_cells_split_the_agent_name_from_the_model(client) -> None:
+    """The dashboard lays the two out separately. Joined into one string, a long
+    model id stretches its whole column and strands the numbers."""
+    seed_task(client, "t1")
+    seed_episode(client, id="g1", task_id="t1", agent_name="gemini",
+                 model="gemini-3.5-flash-lite", reward=1.0, outcome="solved")
+
+    cell = client.get("/api/matrix").json()[0]
+    assert cell["agent_name"] == "gemini"
+    assert cell["model"] == "gemini-3.5-flash-lite"
+    # The joined label stays, so nothing that used it breaks.
+    assert cell["label"] == "gemini (gemini-3.5-flash-lite)"
+
+
+def test_matrix_model_is_null_for_a_scripted_agent(seeded) -> None:
+    cells = {c["label"]: c for c in seeded.get("/api/matrix").json()}
+    assert cells["oracle"]["model"] is None
+    assert cells["oracle"]["agent_name"] == "oracle"
+
+
 def test_matrix_has_no_cell_for_a_pair_with_no_episodes(seeded) -> None:
     cells = {(c["task_id"], c["label"]) for c in seeded.get("/api/matrix").json()}
     assert ("t2", "tamper") not in cells

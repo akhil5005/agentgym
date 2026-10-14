@@ -93,12 +93,19 @@ export function ReplayViewer({ episode }: { episode: EpisodeDetail }) {
   const steps = episode.steps;
   const total = steps.length;
   const listRef = useRef<HTMLOListElement>(null);
+  // Set when the selection changed via the keyboard, so focus can follow it.
+  // Without this, arrow keys move the highlight while focus stays where it was,
+  // leaving two competing "current" markers on screen — and a screen reader
+  // never hears that anything changed.
+  const moveFocusRef = useRef(false);
 
   const go = useCallback(
-    (next: number) => {
+    (next: number, viaKeyboard = false) => {
       setSelected((current) => {
         const target = Math.min(Math.max(next, 0), Math.max(total - 1, 0));
-        return target === current ? current : target;
+        if (target === current) return current;
+        moveFocusRef.current = viaKeyboard;
+        return target;
       });
     },
     [total],
@@ -112,21 +119,27 @@ export function ReplayViewer({ episode }: { episode: EpisodeDetail }) {
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        go(selected - 1);
+        go(selected - 1, true);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        go(selected + 1);
+        go(selected + 1, true);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [go, selected]);
 
-  // Keep the selected row visible when stepping with the keyboard.
+  // Keep the selected row visible, and let focus follow a keyboard move so the
+  // highlight and the focus ring never point at different steps.
   useEffect(() => {
     const list = listRef.current;
     if (!list) return;
-    list.querySelectorAll("li")[selected]?.scrollIntoView({ block: "nearest" });
+    const row = list.querySelectorAll("li")[selected];
+    row?.scrollIntoView({ block: "nearest" });
+    if (moveFocusRef.current) {
+      moveFocusRef.current = false;
+      row?.querySelector("button")?.focus();
+    }
   }, [selected]);
 
   if (total === 0) {

@@ -87,3 +87,12 @@ One line per decision: what we chose and why. Newest at the bottom.
 - **The smoke run on `gemini-3.6-flash` was deleted rather than uploaded** —
   it was a different model, and mixing models inside one `gemini` leaderboard
   row would report a number that no single model actually scored.
+- **`MatrixCell` carries `agent_name` and `model` as well as the joined label** —
+  a browser pass found that one long model id (`gemini-3.5-flash-lite`) stretched
+  its matrix column to several times the width of the others, stranding the
+  numbers far from their header. Splitting the two in the API lets the header put
+  the model on its own line and give every agent column equal width.
+- **Arrow-key navigation in the replay moves focus, not just the highlight** —
+  previously the selection moved and focus stayed where it was, leaving two
+  competing "current" markers on screen and giving a screen reader nothing to
+  announce.

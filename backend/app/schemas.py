@@ -181,6 +181,11 @@ class MatrixCell(BaseModel):
 
     task_id: str
     label: str
+    # The two halves of `label`, so the dashboard can lay the agent name and the
+    # model out separately. A joined string forces one long model id to stretch
+    # a whole column.
+    agent_name: str
+    model: str | None
     n: int
     solve_rate: float
     mean_reward: float

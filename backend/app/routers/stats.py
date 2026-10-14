@@ -89,6 +89,8 @@ def matrix(session: Session = Depends(get_session)) -> list[MatrixCell]:
         MatrixCell(
             task_id=row.task_id,
             label=agent_label(row.agent_name, row.model),
+            agent_name=row.agent_name,
+            model=row.model,
             n=int(row.episodes),
             solve_rate=round(int(row.solved or 0) / int(row.episodes), 4),
             mean_reward=round(float(row.mean_reward or 0.0), 4),

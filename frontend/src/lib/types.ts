@@ -89,6 +89,9 @@ export interface LeaderboardRow {
 export interface MatrixCell {
   task_id: string;
   label: string;
+  /** `label` split in two, so the header can put the model on its own line. */
+  agent_name: string;
+  model: string | null;
   n: number;
   solve_rate: number;
   mean_reward: number;

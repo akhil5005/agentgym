@@ -27,7 +27,18 @@ export function Matrix({ cells }: { cells: MatrixCell[] }) {
     return <EmptyState>No episodes yet, so there is nothing to compare.</EmptyState>;
   }
 
-  const labels = [...new Set(cells.map((cell) => cell.label))].sort();
+  // One column per agent. Keep the name and model separate: joined into one
+  // string, a long model id ("gemini-3.5-flash-lite") stretches its column to
+  // several times the width of the others and strands the numbers.
+  const columns = [
+    ...new Map(
+      cells.map((cell) => [
+        cell.label,
+        { label: cell.label, name: cell.agent_name, model: cell.model },
+      ]),
+    ).values(),
+  ].sort((a, b) => a.label.localeCompare(b.label));
+
   const taskIds = [...new Set(cells.map((cell) => cell.task_id))].sort();
 
   const byKey = new Map(cells.map((cell) => [`${cell.task_id}|${cell.label}`, cell]));
@@ -45,13 +56,20 @@ export function Matrix({ cells }: { cells: MatrixCell[] }) {
               <th scope="col" className="px-4 py-2 text-left font-medium">
                 Task
               </th>
-              {labels.map((label) => (
+              {columns.map((column) => (
                 <th
-                  key={label}
+                  key={column.label}
                   scope="col"
-                  className="px-3 py-2 text-right font-medium"
+                  // A fixed width per agent column, so every agent gets the
+                  // same space whatever its model is called.
+                  className="w-24 px-3 py-2 text-right align-bottom font-medium"
                 >
-                  {label}
+                  <span className="block">{column.name}</span>
+                  {column.model && (
+                    <span className="mt-0.5 block font-mono text-[0.625rem] leading-tight font-normal normal-case break-all opacity-80">
+                      {column.model}
+                    </span>
+                  )}
                 </th>
               ))}
             </tr>
@@ -62,12 +80,12 @@ export function Matrix({ cells }: { cells: MatrixCell[] }) {
                 <th scope="row" className="px-4 py-2 text-left font-normal">
                   <TaskLink taskId={taskId} />
                 </th>
-                {labels.map((label) => {
-                  const cell = byKey.get(`${taskId}|${label}`);
+                {columns.map((column) => {
+                  const cell = byKey.get(`${taskId}|${column.label}`);
                   if (!cell) {
                     return (
                       <td
-                        key={label}
+                        key={column.label}
                         className="px-3 py-2 text-right text-muted"
                         title="Not attempted"
                       >
@@ -79,9 +97,9 @@ export function Matrix({ cells }: { cells: MatrixCell[] }) {
                   }
                   return (
                     <td
-                      key={label}
+                      key={column.label}
                       className={`tabular px-3 py-2 text-right ${tint(cell.mean_reward)}`}
-                      title={`${label} on ${taskId}: mean reward ${reward(
+                      title={`${column.label} on ${taskId}: mean reward ${reward(
                         cell.mean_reward,
                       )}, solved ${percent(cell.solve_rate)} of ${cell.n} episode(s)`}
                     >

@@ -125,7 +125,7 @@ Task 9 spans two files, so the agent has to read more than one.
 
 ## Results
 
-Measured on this machine, 2026-10-14. One trial per task.
+Measured on this machine, 2026-10-13 (UTC). One trial per task.
 Gemini ran on `gemini-3.5-flash-lite`, on Google's free tier.
 
 ### Leaderboard
@@ -210,8 +210,8 @@ hidden tests to aim at the planted bug brought the floors down to 0.333 and
 | Suite | Tests |
 | --- | ---: |
 | `engine/tests` | 318 |
-| `backend/tests` | 76 |
-| **Total** | **394** |
+| `backend/tests` | 78 |
+| **Total** | **396** |
 
 All pass. One skips: a symlink-escape test that needs permissions Windows does
 not grant by default. The 34 Gemini tests run against a stubbed client, so they

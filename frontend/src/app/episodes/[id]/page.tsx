@@ -77,7 +77,9 @@ export default async function EpisodePage({ params }: Props) {
         <StatTile
           label="Trial"
           value={episode.trial}
-          hint={shortDate(episode.finished_at)}
+          // Say what the timestamp is. Bare under "Trial" it reads as though
+          // the date somehow belongs to the trial number.
+          hint={`finished ${shortDate(episode.finished_at)}`}
         />
       </div>
 
