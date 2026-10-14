@@ -362,3 +362,66 @@ generated `.gitignore` would have excluded it anyway.
    never committed, a path that only works from one directory, a dependency I
    installed months ago and forgot to declare. It found exactly that class of
    bug: a config example that existed on my disk and in no clone.*
+
+---
+
+## Phase 7 checkpoint — Deployment
+
+**Gate.** The whole stack deploys from one file, no secret is committed, and the
+security boundary survives being hosted.
+
+The earlier version of `docs/DEPLOY.md` (described in the Phase 6 checkpoint
+above) walked through three providers by hand: Neon for Postgres, Render for the
+API, Vercel for the dashboard. It worked, but every step was a thing to get
+wrong — copy a connection string, invent a key, paste a URL into two places and
+hope they match. Replaced with a single Render blueprint, `render.yaml`, that
+declares all three resources and wires them together.
+
+**What the blueprint removes.** `DATABASE_URL` comes from `fromDatabase`, so the
+connection string is never copied. `INGEST_API_KEY` uses `generateValue: true`,
+so Render invents it and I never see it until I need it — which means there was
+never a moment where the real key sat in a shell history or a notes file.
+
+**What it could not remove.** The two cross-service URLs. Render's `fromService`
+reference exists, but for a web service it yields the *private* network
+hostname, and these two URLs are both used by a browser: one is CORS's
+`FRONTEND_ORIGIN`, the other is baked into the frontend bundle. A private
+hostname in either place fails in a way that looks like a code bug. So both are
+`sync: false` — Render prompts for them on apply, and the blueprint's header
+comment states the two answers.
+
+**One real fix found while packaging.** `backend/requirements.txt` listed
+`pytest`. That file is exactly what the production server installs, so the test
+runner was about to be shipped to a web host that will never run a test. Removed
+it; `pytest` already comes from the engine's `[dev]` extra, which the README's
+install line includes, so local testing is unaffected — verified by re-running
+the backend suite and by a `pip install --dry-run` in a clean venv.
+
+I also broke the file briefly while editing it: a three-line comment lost its
+`#` on two of the lines, which would have made `pip install` fail on the first
+deploy. Caught it by actually checking that every line is a comment, a blank, or
+a parseable requirement, rather than trusting the edit.
+
+**The thing I did not automate.** Pushing to GitHub. Making a repository public
+is irreversible in practice — once it is indexed, "private again" does not
+un-publish it — so the name and visibility were the user's call, not a default I
+picked. The secret sweep ran first: the whole of `git log --all -p` grepped for
+key-shaped strings, plus a direct search for the actual `GEMINI_API_KEY` value
+in every tracked file.
+
+**Two interview questions.**
+1. Your blueprint hard-codes two URLs in a comment instead of referencing the
+   services. Isn't that fragile?
+   *It's the less fragile of the two options. `fromService` would give me the
+   private hostname, and both of these URLs are consumed by a browser — so the
+   "proper" reference produces a CORS failure and a frontend that cannot reach
+   its API, both of which look like application bugs. A prompted variable fails
+   loudly at apply time instead, and the comment tells you the answer. I would
+   rather a manual step I can see than an automatic one that is silently wrong.*
+2. You removed `pytest` from the backend requirements. What does that buy you?
+   *Mostly it's about what that file means. `requirements.txt` is the production
+   install set, so anything in it is a claim that the server needs it — and a
+   test runner on a web host is either dead weight or, if something ever shells
+   out to it, a foothold. The real answer is that dev and prod dependencies
+   belong in different places, and `pytest` already had a correct home in the
+   engine's `[dev]` extra.*

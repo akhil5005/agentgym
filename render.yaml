@@ -1,0 +1,73 @@
+# Render Blueprint — deploys the whole of AgentGym in one go.
+#
+#   Render dashboard -> New -> Blueprint -> pick this repo -> Apply
+#
+# It creates three things:
+#   agentgym-db   Postgres, holds tasks and episodes
+#   agentgym-api  the FastAPI results service
+#   agentgym-web  the Next.js dashboard
+#
+# Render asks you for two values when you apply this (they are marked
+# `sync: false` below, because neither URL exists until the services do).
+# Both follow the pattern https://<service-name>.onrender.com, so unless you
+# rename the services the answers are:
+#
+#   NEXT_PUBLIC_API_URL  ->  https://agentgym-api.onrender.com
+#   FRONTEND_ORIGIN      ->  https://agentgym-web.onrender.com
+#
+# If Render tells you a name is taken it will add a suffix — use the name it
+# actually assigned, and update the other service's variable to match.
+#
+# NOTHING HERE RUNS AGENT CODE. Episodes are played on your own machine with
+# the runner CLI; these services only store and show finished results.
+
+databases:
+  - name: agentgym-db
+    plan: free
+    databaseName: agentgym
+    user: agentgym
+
+services:
+  # --- the results API ------------------------------------------------------
+  - name: agentgym-api
+    type: web
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # $PORT is set by Render. Never hard-code a port here.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.7"
+      - key: ENV
+        # With ENV=prod the app refuses to start while INGEST_API_KEY is still
+        # the default "dev-key". Failing loudly beats running with a key that
+        # is published in this repo.
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agentgym-db
+          property: connectionString
+      - key: INGEST_API_KEY
+        # Render generates this and stores it. Read it from the service's
+        # Environment tab when you upload results — it is the --key value.
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        # Browser requests from any other origin are refused by CORS.
+        sync: false
+
+  # --- the dashboard --------------------------------------------------------
+  - name: agentgym-web
+    type: web
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npx next start -p $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_PUBLIC_API_URL
+        # Read at build time as well as runtime, so changing it needs a redeploy.
+        sync: false

@@ -96,3 +96,17 @@ One line per decision: what we chose and why. Newest at the bottom.
   previously the selection moved and focus stayed where it was, leaving two
   competing "current" markers on screen and giving a screen reader nothing to
   announce.
+- **Deploy with a single Render blueprint (`render.yaml`) instead of three
+  providers wired by hand** — one `Apply` creates the database and both
+  services, and `fromDatabase` plus `generateValue` mean the connection string
+  and the ingest key are never copied, pasted, or written down anywhere.
+- **The two cross-service URLs are prompted (`sync: false`), not `fromService`
+  references** — `fromService` yields a web service's *private* hostname, and
+  both of these URLs are used by a browser, so the automatic reference would
+  produce a CORS failure and an unreachable API that both look like code bugs.
+- **`pytest` removed from `backend/requirements.txt`** — that file is the
+  production install set; the test runner belongs in the engine's `[dev]` extra,
+  which it already was, so nothing local changed.
+- **Repository name and visibility left to the user rather than defaulted** —
+  publishing source code is irreversible in practice, so it is not a choice to
+  make on someone's behalf.

@@ -7,4 +7,7 @@ pydantic-settings>=2.6
 # postgresql+psycopg:// so this driver is the one that gets used.
 psycopg[binary]>=3.2
 httpx>=0.27
-pytest>=8.0
+
+# pytest is deliberately not listed here: this file is what the production
+# server installs. The test runner comes from the engine's [dev] extra, which
+# the README's install command already includes.
