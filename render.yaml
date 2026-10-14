@@ -2,30 +2,31 @@
 #
 #   Render dashboard -> New -> Blueprint -> pick this repo -> Apply
 #
-# It creates three things:
-#   agentgym-db   Postgres, holds tasks and episodes
+# It creates two web services:
 #   agentgym-api  the FastAPI results service
 #   agentgym-web  the Next.js dashboard
 #
-# Render asks you for two values when you apply this (they are marked
-# `sync: false` below, because neither URL exists until the services do).
-# Both follow the pattern https://<service-name>.onrender.com, so unless you
-# rename the services the answers are:
+# It deliberately does NOT create the database. Render allows only one active
+# free Postgres per account, so a `databases:` block here fails the whole apply
+# for anyone who already has one. Instead you bring a connection string.
+#
+# Render asks you for three values when you apply this (they are marked
+# `sync: false` below). Two are URLs that do not exist until the services do;
+# both follow the pattern https://<service-name>.onrender.com, so unless you
+# rename anything the answers are:
 #
 #   NEXT_PUBLIC_API_URL  ->  https://agentgym-api.onrender.com
 #   FRONTEND_ORIGIN      ->  https://agentgym-web.onrender.com
+#
+# The third is DATABASE_URL. See docs/DEPLOY.md for where to get one — any
+# Postgres works, and leaving it blank falls back to SQLite, which on a free
+# web service is wiped every time the service sleeps or redeploys.
 #
 # If Render tells you a name is taken it will add a suffix — use the name it
 # actually assigned, and update the other service's variable to match.
 #
 # NOTHING HERE RUNS AGENT CODE. Episodes are played on your own machine with
 # the runner CLI; these services only store and show finished results.
-
-databases:
-  - name: agentgym-db
-    plan: free
-    databaseName: agentgym
-    user: agentgym
 
 services:
   # --- the results API ------------------------------------------------------
@@ -46,9 +47,10 @@ services:
         # is published in this repo.
         value: prod
       - key: DATABASE_URL
-        fromDatabase:
-          name: agentgym-db
-          property: connectionString
+        # Paste a Postgres connection string. config.py rewrites a
+        # postgres:// or postgresql:// prefix to postgresql+psycopg:// for
+        # you, so paste it exactly as your provider gives it.
+        sync: false
       - key: INGEST_API_KEY
         # Render generates this and stores it. Read it from the service's
         # Environment tab when you upload results — it is the --key value.

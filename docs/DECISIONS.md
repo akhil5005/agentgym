@@ -97,9 +97,14 @@ One line per decision: what we chose and why. Newest at the bottom.
   competing "current" markers on screen and giving a screen reader nothing to
   announce.
 - **Deploy with a single Render blueprint (`render.yaml`) instead of three
-  providers wired by hand** — one `Apply` creates the database and both
-  services, and `fromDatabase` plus `generateValue` mean the connection string
-  and the ingest key are never copied, pasted, or written down anywhere.
+  providers wired by hand** — one `Apply` creates both services, and
+  `generateValue` means the ingest key is never written down anywhere.
+- **The blueprint does not declare the database** — it originally did, with
+  `fromDatabase` injecting the URL, which is strictly nicer. But Render allows
+  only one active free Postgres per account, and declaring one fails the
+  *entire* apply for anybody who already has a free database. A blueprint that
+  works for one account is not a deployment story, so `DATABASE_URL` is a
+  prompted variable and the database can live anywhere.
 - **The two cross-service URLs are prompted (`sync: false`), not `fromService`
   references** — `fromService` yields a web service's *private* hostname, and
   both of these URLs are used by a browser, so the automatic reference would

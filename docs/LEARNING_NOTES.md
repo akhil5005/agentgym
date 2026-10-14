@@ -377,10 +377,41 @@ wrong — copy a connection string, invent a key, paste a URL into two places an
 hope they match. Replaced with a single Render blueprint, `render.yaml`, that
 declares all three resources and wires them together.
 
-**What the blueprint removes.** `DATABASE_URL` comes from `fromDatabase`, so the
-connection string is never copied. `INGEST_API_KEY` uses `generateValue: true`,
-so Render invents it and I never see it until I need it — which means there was
+**What the blueprint removes.** `INGEST_API_KEY` uses `generateValue: true`, so
+Render invents it and I never see it until I need it — which means there was
 never a moment where the real key sat in a shell history or a notes file.
+
+**What the first version got wrong, and how I found out.** It also declared the
+database, with `fromDatabase` injecting `DATABASE_URL` so the connection string
+was never copied by hand. That is strictly nicer, and it failed immediately:
+Render allows **one active free Postgres per account**, the account already had
+one, and the error cancelled every other resource in the blueprint —
+
+```
+Create database agentgym-db
+(cannot have more than one active free tier database)
+Create web service agentgym-api
+(canceled: another action failed)
+```
+
+The lesson is not about Render's quota. It is that I had validated the
+blueprint's *schema* — three WebFetches confirming `runtime` replaces `env`,
+that `plan: free` is valid, how `fromDatabase` is spelled — and concluded it
+would work. Schema validity says nothing about account state. A blueprint that
+only applies cleanly on an account with no existing free database is not a
+deployment story, it is a deployment story for one account.
+
+So the database came out of the blueprint entirely and `DATABASE_URL` became a
+prompted variable. Slightly worse ergonomics — one more string to paste — and
+much better: it applies on any account, and the database can live on Neon,
+Supabase, or Render without the blueprint caring.
+
+That change surfaced a second thing worth writing down. Reusing an existing
+Postgres is only safe if it has no `tasks`, `episodes` or `steps` table, because
+`create_all` *silently skips* a table that already exists — so the app would
+bind to someone else's table and fail later with a confusing column error
+instead of refusing at startup. The deploy guide now says to check with `\dt`
+before choosing that option, and recommends a separate free database instead.
 
 **What it could not remove.** The two cross-service URLs. Render's `fromService`
 reference exists, but for a web service it yields the *private* network
