@@ -110,3 +110,11 @@ One line per decision: what we chose and why. Newest at the bottom.
 - **Repository name and visibility left to the user rather than defaulted** —
   publishing source code is irreversible in practice, so it is not a choice to
   make on someone's behalf.
+- **`runs/*.jsonl` stays gitignored, so the episode records are not published**
+  — the post-submit observation names the hidden tests that failed, so
+  committing the run files would disclose roughly two-thirds of the hidden
+  suite and make the benchmark reusable only once.
+- **The six hidden tests that duplicate a visible test are documented, not
+  deleted** — they are deliberate regression checks, but they are not unseen
+  signal, so the README says exactly which tasks they are in rather than
+  implying every hidden test is a fresh edge case.

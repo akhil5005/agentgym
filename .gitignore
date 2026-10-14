@@ -22,7 +22,9 @@ out/
 .env.*
 !.env.example
 
-# Episode logs are real run output, not source
+# Episode records. Deliberately not committed: the post-submit observation
+# names the hidden tests that failed, so publishing these would disclose
+# most of the hidden suite.
 runs/
 
 # Editors / OS

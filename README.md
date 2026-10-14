@@ -373,12 +373,17 @@ cases, but never point at the bug and never mention the hidden tests.
 
 Worth knowing before you rely on any of this.
 
-- **One trial per task** in the numbers above. LLM agents are stochastic, so a
-  real comparison needs `--trials 5` or more and a note about variance.
-- **The Gemini numbers are one trial per task.** LLM agents are stochastic, so
+- **One trial per task** in the numbers above. LLM agents are stochastic, so
   0.990 is a single sample, not a stable score. A real comparison needs
   `--trials 5` or more plus a variance figure — which the free tier's daily
   quota does not allow in one sitting.
+- **Six hidden tests are byte-identical to a visible test.** Three in
+  `08_shortest_path`, two in `06_csv_line`, one in `09_bank_transfer`. They act
+  as regression checks — a fix that breaks known-good behaviour still loses
+  those points — but they are not unseen signal, so the hidden suite is a
+  little less hidden than "10–12 tests it never sees" suggests. For
+  `08_shortest_path` that is 3 of 12. Measured with an AST comparison of test
+  bodies, not by eye.
 - **Nine tasks cannot separate good models.** Gemini scored 0.990 against an
   oracle ceiling of 1.000, so this benchmark is already close to saturated for
   a capable model. It can tell a working agent from a broken one; it cannot
