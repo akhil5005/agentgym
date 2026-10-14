@@ -50,7 +50,7 @@ task.
 | No-op floor 0.360, oracle ceiling 1.000 | same command |
 | 45 cheat attempts, all blocked (5 per task × 9 tasks) | tamper agent's `tamper_attempts` |
 | Gemini made 0 blocked writes across 9 tasks | its `tamper_attempts` is 0 everywhere |
-| 396 tests, 318 engine + 78 backend | `pytest` |
+| 396 tests, 318 engine + 78 backend | `pytest` — 395 pass with every extra installed, 338 with `[dev]` alone (the rest skip, nothing fails) |
 | Runs with no API key | the three scripted agents and the whole dashboard |
 
 ## The three questions to be ready for

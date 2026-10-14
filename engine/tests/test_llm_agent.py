@@ -14,6 +14,13 @@ import pytest
 
 from agentgym.models import UserFacingError
 
+# The stubs below replace the network, but LLMAgent still imports the real
+# anthropic package to build its client. That package is an optional extra, so
+# without this guard a plain `pip install -e "./engine[dev]"` fails this whole
+# file instead of skipping it — which is exactly what a fresh clone does.
+# test_gemini_agent.py guards google-genai the same way.
+pytest.importorskip("anthropic", reason="anthropic is an optional extra")
+
 
 # --- stub API objects --------------------------------------------------------
 

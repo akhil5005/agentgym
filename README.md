@@ -213,10 +213,22 @@ hidden tests to aim at the planted bug brought the floors down to 0.333 and
 | `backend/tests` | 78 |
 | **Total** | **396** |
 
-All pass. One skips: a symlink-escape test that needs permissions Windows does
-not grant by default. The 34 Gemini tests run against a stubbed client, so they
-need no API key and spend no quota. The frontend passes `tsc --noEmit`, `eslint`, and
-`next build` with no errors.
+What `pytest` prints depends on which optional extras you installed, so both
+numbers are given rather than just the flattering one:
+
+| Install | Result |
+| --- | --- |
+| `pip install -e "./engine[dev,gemini,anthropic]"` | **395 passed, 1 skipped** |
+| the quick start above (`[dev]` only) | **338 passed, 3 skipped** |
+
+Nothing fails in either case. The skips are honest ones: a symlink-escape test
+that needs permissions Windows does not grant by default, and — when the
+matching extra is absent — the Gemini and Anthropic agent test files, which
+cannot build their clients without the SDK installed.
+
+The LLM tests never touch the network. Both agents are tested against stubbed
+clients, so they need no API key and spend no quota. The frontend passes
+`tsc --noEmit`, `eslint` and `next build` with no errors.
 
 ---
 
