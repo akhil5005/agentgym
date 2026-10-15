@@ -26,11 +26,21 @@ Free Render services sleep after ~15 minutes idle and take 30–60 seconds to
 wake. Open both URLs once before anyone is watching:
 
 ```powershell
-curl https://agentgym-api-n3fk.onrender.com/api/health   # {"status":"ok"}
-start https://agentgym-web-n3fk.onrender.com             # should show data, not zeros
+curl https://agentgym-api.onrender.com/api/health   # {"status":"ok"}
+start https://agentgym-web.onrender.com             # should show data, not zeros
 ```
 
 If the dashboard shows zeros, the database is empty — see "Uploading results".
+
+**Where the data lives.** A Neon Postgres, in a dedicated `agentgym` schema
+(`DB_SCHEMA=agentgym` on the API service). It is deliberately *not* the
+container's disk: Render's free tier has no persistent storage, so an earlier
+SQLite setup lost every episode on each redeploy. Verified by uploading, forcing
+a clean rebuild, and re-querying — the 36 episodes survived.
+
+Both free tiers idle out: Render sleeps the web services after ~15 minutes, Neon
+suspends the database after ~5. The first request absorbs both wake-ups, which
+is what the API client's retry is for.
 
 Have a local fallback running in two spare terminals, in case the wifi or the
 free tier lets you down mid-call:
@@ -118,8 +128,8 @@ The dashboard is empty until you send it something. Run this once; the episode
 files are already on disk, so nothing needs re-running.
 
 ```powershell
-$env:AGENTGYM_API = "https://agentgym-api-n3fk.onrender.com"
-$env:AGENTGYM_KEY = "<Render -> agentgym-api-n3fk -> Environment -> INGEST_API_KEY>"
+$env:AGENTGYM_API = "https://agentgym-api.onrender.com"
+$env:AGENTGYM_KEY = "<Render -> agentgym-api -> Environment -> INGEST_API_KEY>"
 
 python -m agentgym.runner sync-tasks --api $env:AGENTGYM_API --key $env:AGENTGYM_KEY
 python -m agentgym.runner upload "runs/*.jsonl" --api $env:AGENTGYM_API --key $env:AGENTGYM_KEY

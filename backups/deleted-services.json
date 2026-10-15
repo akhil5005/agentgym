@@ -1,0 +1,25 @@
+{
+ "captured_at": "2026-10-15T06:58:10.018658+00:00",
+ "services": {
+  "agentgym-api-n3fk": {
+   "id": "srv-db857livcj2c7388tg9g",
+   "type": "web_service",
+   "envVars": {
+    "DB_SCHEMA": "agentgym",
+    "FRONTEND_ORIGIN": "https://agentgym-web.onrender.com",
+    "DATABASE_URL": "<redacted>",
+    "INGEST_API_KEY": "<redacted>",
+    "ENV": "prod",
+    "PYTHON_VERSION": "3.13.7"
+   }
+  },
+  "agentgym-web-n3fk": {
+   "id": "srv-db857livcj2c7388tgb0",
+   "type": "web_service",
+   "envVars": {
+    "NEXT_PUBLIC_API_URL": "https://agentgym-api.onrender.com",
+    "NODE_VERSION": "22"
+   }
+  }
+ }
+}
