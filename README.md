@@ -375,6 +375,7 @@ cases, but never point at the bug and never mention the hidden tests.
 | --- | --- |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The diagram, one episode step by step, the module map |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | One-click Render blueprint, no Docker |
+| [docs/DEMO.md](docs/DEMO.md) | How to operate it: demo order, upload, fallbacks |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Every design decision, one line each, with the reason |
 | [docs/LEARNING_NOTES.md](docs/LEARNING_NOTES.md) | A checkpoint per build phase |
 | [docs/CV_BULLETS.md](docs/CV_BULLETS.md) | Résumé bullets, filled from the real numbers above |
