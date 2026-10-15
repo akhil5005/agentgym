@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { API_HELP } from "@/lib/api";
+import { API_HELP, API_IS_REMOTE } from "@/lib/api";
 
 export function PageHeading({
   title,
@@ -78,13 +78,25 @@ export function ApiDown({ what }: { what: string }) {
       <h2 className="text-sm font-semibold text-failed">
         Could not load {what}
       </h2>
-      <p className="mt-2 text-sm text-foreground">
-        The dashboard reads everything from the AgentGym API. Start it from the
-        repository root:
-      </p>
-      <pre className="mt-3 overflow-x-auto rounded-lg border border-edge bg-surface p-3 text-xs">
-        <code>uvicorn app.main:app --reload --app-dir backend</code>
-      </pre>
+      {API_IS_REMOTE ? (
+        // Deployed: there is no local command for the reader to run, and
+        // telling them to start uvicorn is actively misleading.
+        <p className="mt-2 text-sm text-foreground">
+          The dashboard reads everything from the AgentGym API, which is a
+          free-tier service that sleeps when idle. Waking it takes about a
+          minute — reload the page shortly.
+        </p>
+      ) : (
+        <>
+          <p className="mt-2 text-sm text-foreground">
+            The dashboard reads everything from the AgentGym API. Start it from
+            the repository root:
+          </p>
+          <pre className="mt-3 overflow-x-auto rounded-lg border border-edge bg-surface p-3 text-xs">
+            <code>uvicorn app.main:app --reload --app-dir backend</code>
+          </pre>
+        </>
+      )}
       <p className="mt-3 text-xs text-muted">{API_HELP.split("\n")[0]}</p>
     </div>
   );
