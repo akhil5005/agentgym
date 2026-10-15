@@ -31,3 +31,7 @@ runs/
 .DS_Store
 .idea/
 .vscode/
+
+# Deployment working directory: holds Render API responses, which include
+# database credentials. Never commit it.
+.render-work/
