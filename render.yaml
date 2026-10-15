@@ -50,7 +50,18 @@ services:
         # Paste a Postgres connection string. config.py rewrites a
         # postgres:// or postgresql:// prefix to postgresql+psycopg:// for
         # you, so paste it exactly as your provider gives it.
+        #
+        # Leave it unset and the app falls back to SQLite on the container's
+        # disk, which on a free service is wiped by every restart, redeploy
+        # and wake-from-sleep. It will look like it works, then silently empty.
         sync: false
+      - key: DB_SCHEMA
+        # Keeps our tables in their own Postgres schema, which is what makes
+        # it safe to share a database with another project: our table names
+        # (tasks, episodes, steps) are generic enough to collide, and
+        # create_all SKIPS an existing table rather than failing, so without
+        # this we could silently bind to someone else's data.
+        value: agentgym
       - key: INGEST_API_KEY
         # Render generates this and stores it. Read it from the service's
         # Environment tab when you upload results — it is the --key value.

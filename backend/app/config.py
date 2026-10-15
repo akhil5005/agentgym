@@ -6,6 +6,8 @@ nothing reaches into `os.environ` directly.
 
 from __future__ import annotations
 
+import re
+
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,6 +33,33 @@ class Settings(BaseSettings):
 
     # The single browser origin allowed to call this API.
     frontend_origin: str = "http://localhost:3000"
+
+    # Postgres schema to keep AgentGym's tables in. Empty means the default
+    # (`public`), which is right when the database is AgentGym's alone.
+    #
+    # Set it when sharing a database with another project. Our table names —
+    # tasks, episodes, steps — are generic enough to collide, and `create_all`
+    # *skips* a table that already exists rather than failing, so a collision
+    # would silently bind our models to someone else's table. A dedicated
+    # schema removes that class of accident entirely. Ignored on SQLite, which
+    # has no schemas.
+    db_schema: str = ""
+
+    @field_validator("db_schema")
+    @classmethod
+    def validate_schema_name(cls, value: str) -> str:
+        """Allow only a plain identifier.
+
+        This value reaches a CREATE SCHEMA statement, which cannot be
+        parameterised, so it is validated here rather than escaped there.
+        """
+        value = value.strip()
+        if value and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", value):
+            raise ValueError(
+                "DB_SCHEMA must be a plain identifier: a letter or underscore "
+                "followed by letters, digits or underscores"
+            )
+        return value
 
     @field_validator("database_url")
     @classmethod
