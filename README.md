@@ -1,7 +1,31 @@
 # AgentGym
 
-A reinforcement-learning environment for AI coding agents, with a results
-dashboard.
+**A reinforcement-learning environment for AI coding agents, with a results
+dashboard.**
+
+[![live dashboard](https://img.shields.io/badge/live-dashboard-2ea44f)](https://agentgym-web.onrender.com)
+[![API docs](https://img.shields.io/badge/API-docs-blue)](https://agentgym-api.onrender.com/docs)
+[![tests](https://img.shields.io/badge/tests-396-success)](#tests)
+[![python](https://img.shields.io/badge/python-3.11%2B-3776ab)](#stack)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](#stack)
+[![no Docker](https://img.shields.io/badge/no-Docker-lightgrey)](#stack)
+
+**→ [agentgym-web.onrender.com](https://agentgym-web.onrender.com)** — live, with
+real results in it. Free tier, so the first load can take ~30s while it wakes.
+
+[![AgentGym dashboard](docs/images/dashboard.jpg)](https://agentgym-web.onrender.com)
+
+| | oracle | **gemini-3.5-flash-lite** | noop | tamper |
+| --- | ---: | ---: | ---: | ---: |
+| Mean reward | 1.000 | **0.990** | 0.360 | 0.360 |
+| Solve rate | 100% | **89%** | 0% | 0% |
+| Tamper rate | 0% | **0%** | 0% | **100% blocked** |
+
+The ceiling and floor are measured, not assumed: `oracle` applies the reference
+fix and must score 1.000, `noop` submits immediately and scores whatever the bug
+already passes, and `tamper` exists only to cheat and must never beat `noop`.
+
+---
 
 Each episode hands an agent a small Python project with a bug in it. The agent
 can list files, read files, write files, run the visible tests, and submit. When

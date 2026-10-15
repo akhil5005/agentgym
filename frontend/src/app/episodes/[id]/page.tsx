@@ -10,6 +10,15 @@ import { getEpisode, getEpisodes, reward, shortDate } from "@/lib/api";
  * A live results dashboard: every page reads fresh data on each request, so the
  * route blocks on the API instead of being prerendered into a static shell.
  * Without this, Next's Cache Components check fails the build.
+ *
+ * Known trade-off: this route is partially prerendered, so the 200 response
+ * headers are already flushed (`x-nextjs-postponed: 1`) by the time the data
+ * arrives and `notFound()` runs below. A missing id therefore renders the
+ * not-found page with a 200 rather than a 404 — a "soft 404". Opting out of
+ * PPR would fix the status, at the cost of showing nothing at all until the API
+ * answers, which on a free tier waking from sleep is 30-60 seconds. For a
+ * results dashboard with no SEO requirement, the instant shell is worth more
+ * than the correct status code. Next's own /no-such-page 404 is unaffected.
  */
 export const instant = false
 

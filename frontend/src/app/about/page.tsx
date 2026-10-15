@@ -37,7 +37,7 @@ export default function AboutPage() {
               The <strong>reward</strong> is zero on every step except the last.
               When the agent submits, the engine throws away the tests the agent
               could run and grades the work against a different set of{" "}
-              <strong>hidden tests</strong> — eight to twelve of them per task,
+              <strong>hidden tests</strong> — ten to twelve of them per task,
               covering the edge cases. The reward is the fraction that pass.
             </p>
             <p>
