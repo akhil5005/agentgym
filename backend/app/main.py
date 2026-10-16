@@ -20,8 +20,14 @@ from app.routers import episodes, stats, tasks
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Create any missing tables on startup."""
-    create_tables()
+    """Create any missing tables on startup, unless told not to.
+
+    On a serverless host this hook runs on every cold start, so leaving it on
+    would spend a database round trip per invocation re-checking tables that
+    already exist. See `auto_create_tables` in config.py.
+    """
+    if settings.auto_create_tables:
+        create_tables()
     yield
 
 

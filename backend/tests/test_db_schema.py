@@ -101,3 +101,24 @@ def test_an_unset_schema_means_the_default_even_on_postgres(
         db.settings, "database_url", "postgresql+psycopg://u:p@host/db"
     )
     assert db._schema() is None
+
+
+# --- auto_create_tables: the serverless-correctness flag ---------------------
+
+
+def test_tables_are_created_on_startup_by_default() -> None:
+    """A long-running server and a fresh clone both want this on."""
+    assert make().auto_create_tables is True
+
+
+def test_table_creation_can_be_turned_off() -> None:
+    """On serverless the startup hook runs per cold start, so it must be
+    possible to skip the CREATE SCHEMA / reflect round trip."""
+    assert make(auto_create_tables=False).auto_create_tables is False
+
+
+def test_the_flag_is_read_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AUTO_CREATE_TABLES", "false")
+    assert Settings(_env_file=None).auto_create_tables is False  # type: ignore[call-arg]

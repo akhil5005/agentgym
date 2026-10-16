@@ -8,7 +8,7 @@ counting them in a loop would work on a laptop with 30 rows and fall over at
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import case, distinct, func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
@@ -106,10 +106,13 @@ def stats(session: Session = Depends(get_session)) -> Stats:
     tasks = session.scalar(select(func.count(Task.id))) or 0
     episodes = session.scalar(select(func.count(Episode.id))) or 0
     # Count distinct (agent, model) pairs, to match the leaderboard's rows.
+    # GROUP BY already yields one row per distinct pair, so an extra
+    # column-level distinct() is redundant — and SQLAlchemy warns that using it
+    # outside an aggregate is not what it means.
     agents = (
         session.scalar(
             select(func.count()).select_from(
-                select(distinct(Episode.agent_name), Episode.model)
+                select(Episode.agent_name, Episode.model)
                 .group_by(Episode.agent_name, Episode.model)
                 .subquery()
             )

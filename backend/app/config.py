@@ -34,6 +34,18 @@ class Settings(BaseSettings):
     # The single browser origin allowed to call this API.
     frontend_origin: str = "http://localhost:3000"
 
+    # Whether to create missing tables when the app starts.
+    #
+    # True is right for a long-running server and for local development: it
+    # runs once at boot and the app is usable with no setup step.
+    #
+    # Set it false on a serverless host. There the "startup" hook runs on every
+    # cold start, so each one would spend a round trip issuing CREATE SCHEMA
+    # IF NOT EXISTS and reflecting tables that have existed for weeks. Create
+    # the tables once (any local run against the same DATABASE_URL does it),
+    # then turn this off.
+    auto_create_tables: bool = True
+
     # Postgres schema to keep AgentGym's tables in. Empty means the default
     # (`public`), which is right when the database is AgentGym's alone.
     #
