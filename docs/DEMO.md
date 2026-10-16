@@ -22,22 +22,16 @@ out loud.
 
 ## Before the call — five minutes
 
-A GitHub Action pings both services every 10 minutes from **09:30 to 19:20
-IST**, so during a normal working day they are already awake and respond in
-well under a second. Outside that window they sleep, and the first request
-takes 30-60 seconds while Render wakes them.
+Both services sleep after 15 minutes idle. The dashboard wakes in about two
+seconds; the API takes 30–60 (measured twice at 42s).
 
-Two things worth knowing:
+**You no longer have to care.** The page does not wait for the API: the
+heading and layout render immediately, and each panel shows a "Waking the
+server…" state that retries by itself until the data arrives. Nobody watching
+sees an error — just a page that fills itself in within a minute.
 
-- **Demo outside the window?** Open the repo's Actions tab, pick *Keep
-  deployment warm*, and hit **Run workflow**. That wakes both services on
-  demand, about a minute before you need them.
-- **Why not keep them awake all day?** Render's free tier gives 750 instance
-  hours a month *shared across the whole workspace*, and running out suspends
-  every free service until the next month. Two services round the clock needs
-  ~1,488h. The 10-hour window costs 620h and leaves 130h spare.
-
-Either way, open both URLs once before anyone is watching:
+So the only reason to warm it up first is to skip that minute. Open both URLs
+once before anyone is watching:
 
 ```powershell
 curl https://agentgym-api.onrender.com/api/health   # {"status":"ok"}
@@ -188,7 +182,8 @@ honest weak spot in the current numbers — say so before you are asked.
 
 | Symptom | What to do |
 | --- | --- |
-| Dashboard spins, then "Could not load the results" | The API is asleep. Reload after ~45 seconds, or switch to localhost |
+| Panels say "Waking the server…" | Normal. The free API is asleep; it retries itself and fills in within a minute. Keep talking — this is a good moment to explain that episodes run locally and the site only stores results |
+| "Still waiting on …" with a Try again button | It gave up after ~72s, which is longer than a normal wake. Hit the button, or switch to localhost |
 | Dashboard shows all zeros | Database empty, or the API is pointed at a different database. Switch to localhost and keep talking |
 | Render site is down entirely | `npm run dev` + `uvicorn` locally — identical UI, same data |
 | An episode hangs | Ctrl-C. The sandbox kills the process tree on timeout, but the CLI is still yours to interrupt |

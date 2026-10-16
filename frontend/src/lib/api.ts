@@ -44,9 +44,11 @@ uvicorn app.main:app --reload --app-dir backend`;
  * A warm request answers in ~0.5s. A Render free service waking from sleep was
  * measured at 22s once and 42s another time, and Render's own docs say "about
  * one minute". Four attempts of 20s with 3s between them covers ~89s, so a
- * fully cold wake resolves instead of showing the error card. The keep-warm
- * workflow in .github/workflows/ makes that path rare in the first place; this
- * is the belt to its braces.
+ * fully cold wake resolves instead of showing the error card.
+ *
+ * This is the first of two layers. If the budget is exhausted anyway, the page
+ * does not fail: each panel renders a Waking component that retries on its own
+ * until the API answers. See components/waking.tsx.
  */
 const ATTEMPT_TIMEOUT_MS = 20_000;
 const ATTEMPTS = 4;
