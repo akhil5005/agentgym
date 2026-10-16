@@ -38,10 +38,19 @@ export const API_HELP = API_IS_REMOTE
   : `Could not reach the API at ${API_URL}. Start it with:
 uvicorn app.main:app --reload --app-dir backend`;
 
-/** Per-attempt budget. Longer than a warm request by two orders of magnitude. */
-const ATTEMPT_TIMEOUT_MS = 15_000;
-const ATTEMPTS = 3;
-const RETRY_DELAY_MS = 2_000;
+/**
+ * Retry budget, sized against a measured cold start rather than a guess.
+ *
+ * A warm request answers in ~0.5s. A Render free service waking from sleep was
+ * measured at 22s once and 42s another time, and Render's own docs say "about
+ * one minute". Four attempts of 20s with 3s between them covers ~89s, so a
+ * fully cold wake resolves instead of showing the error card. The keep-warm
+ * workflow in .github/workflows/ makes that path rare in the first place; this
+ * is the belt to its braces.
+ */
+const ATTEMPT_TIMEOUT_MS = 20_000;
+const ATTEMPTS = 4;
+const RETRY_DELAY_MS = 3_000;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

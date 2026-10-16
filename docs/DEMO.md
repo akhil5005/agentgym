@@ -22,8 +22,22 @@ out loud.
 
 ## Before the call — five minutes
 
-Free Render services sleep after ~15 minutes idle and take 30–60 seconds to
-wake. Open both URLs once before anyone is watching:
+A GitHub Action pings both services every 10 minutes from **09:30 to 19:20
+IST**, so during a normal working day they are already awake and respond in
+well under a second. Outside that window they sleep, and the first request
+takes 30-60 seconds while Render wakes them.
+
+Two things worth knowing:
+
+- **Demo outside the window?** Open the repo's Actions tab, pick *Keep
+  deployment warm*, and hit **Run workflow**. That wakes both services on
+  demand, about a minute before you need them.
+- **Why not keep them awake all day?** Render's free tier gives 750 instance
+  hours a month *shared across the whole workspace*, and running out suspends
+  every free service until the next month. Two services round the clock needs
+  ~1,488h. The 10-hour window costs 620h and leaves 130h spare.
+
+Either way, open both URLs once before anyone is watching:
 
 ```powershell
 curl https://agentgym-api.onrender.com/api/health   # {"status":"ok"}

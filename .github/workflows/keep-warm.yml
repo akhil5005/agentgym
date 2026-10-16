@@ -1,0 +1,75 @@
+# Keeps the deployed dashboard and API awake during the hours anyone is likely
+# to open them.
+#
+# Why this exists
+# ---------------
+# Render spins a free web service down after 15 minutes without traffic. Waking
+# it again was measured at 22s once and 42s another time; Render's own docs say
+# "about one minute". That is the difference between a link that works and a
+# link that looks broken.
+#
+# Why it is a window and not 24/7
+# -------------------------------
+# Free instance hours are 750 per month, SHARED ACROSS THE WHOLE WORKSPACE, and
+# "Render suspends all of your Free web services until the start of the next
+# month" if you run out. Two services kept awake round the clock need ~1,488h,
+# which blows the budget outright. Even one service 24/7 is 744h in a 31-day
+# month — a 6-hour margin, which is not a margin.
+#
+#   two services x 10h/day x 31 days = 620h, leaving 130h spare.
+#
+# So this runs a 10-hour window covering Indian working hours, and the frontend
+# retries (src/lib/api.ts, ~89s budget) cover a cold start outside it.
+#
+# If you need it awake right now for a demo, use the "Run workflow" button on
+# the Actions tab — that is what workflow_dispatch is for.
+#
+# Note: GitHub disables scheduled workflows in a repository with no activity for
+# 60 days. If the pings stop, push any commit to re-enable them.
+
+name: Keep deployment warm
+
+on:
+  schedule:
+    # Every 10 minutes from 04:00 to 13:50 UTC, i.e. 09:30 to 19:20 IST. The
+    # services stay up for ~15 minutes after the last ping, so cover runs to
+    # roughly 19:35 IST — the whole of a normal interview day.
+    - cron: "*/10 4-13 * * *"
+  workflow_dispatch:
+
+# Never let two runs overlap, and never burn minutes queueing them up.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake the API and its database
+        # /api/stats is deliberate: unlike /api/health it runs a query, so this
+        # also keeps the Neon database from suspending on its own idle timer.
+        run: |
+          echo "pinging API ..."
+          code=$(curl -s -o /tmp/api.json -w '%{http_code}' --max-time 120 \
+            https://agentgym-api.onrender.com/api/stats) || code=000
+          echo "  HTTP $code  $(cat /tmp/api.json 2>/dev/null | head -c 120)"
+          # A slow wake is the normal case here, not a failure worth alerting on.
+          if [ "$code" != "200" ]; then
+            echo "::warning::API did not return 200 (got $code) - retrying once"
+            sleep 20
+            code=$(curl -s -o /tmp/api.json -w '%{http_code}' --max-time 120 \
+              https://agentgym-api.onrender.com/api/stats) || code=000
+            echo "  retry HTTP $code"
+          fi
+
+      - name: Wake the dashboard
+        run: |
+          echo "pinging dashboard ..."
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 \
+            https://agentgym-web.onrender.com/) || code=000
+          echo "  HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::warning::dashboard did not return 200 (got $code)"
+          fi
