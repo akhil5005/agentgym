@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { API_HELP, API_IS_REMOTE } from "@/lib/api";
+import { Waking } from "@/components/waking";
 
 export function PageHeading({
   title,
@@ -73,30 +74,25 @@ export function StatTile({
  * fix is one line.
  */
 export function ApiDown({ what }: { what: string }) {
+  // Deployed, the overwhelmingly likely cause is "the free host is asleep",
+  // which fixes itself in under a minute. Showing a red error for something
+  // self-correcting is wrong, and there is no command the reader could run
+  // anyway — so hand over to the component that waits and retries.
+  if (API_IS_REMOTE) return <Waking what={what} />;
+
+  // Locally, the backend genuinely is not running, and the fix is one line.
   return (
     <div className="rounded-xl border border-failed/40 bg-failed-soft p-4">
       <h2 className="text-sm font-semibold text-failed">
         Could not load {what}
       </h2>
-      {API_IS_REMOTE ? (
-        // Deployed: there is no local command for the reader to run, and
-        // telling them to start uvicorn is actively misleading.
-        <p className="mt-2 text-sm text-foreground">
-          The dashboard reads everything from the AgentGym API, which is a
-          free-tier service that sleeps when idle. Waking it takes about a
-          minute — reload the page shortly.
-        </p>
-      ) : (
-        <>
-          <p className="mt-2 text-sm text-foreground">
-            The dashboard reads everything from the AgentGym API. Start it from
-            the repository root:
-          </p>
-          <pre className="mt-3 overflow-x-auto rounded-lg border border-edge bg-surface p-3 text-xs">
-            <code>uvicorn app.main:app --reload --app-dir backend</code>
-          </pre>
-        </>
-      )}
+      <p className="mt-2 text-sm text-foreground">
+        The dashboard reads everything from the AgentGym API. Start it from the
+        repository root:
+      </p>
+      <pre className="mt-3 overflow-x-auto rounded-lg border border-edge bg-surface p-3 text-xs">
+        <code>uvicorn app.main:app --reload --app-dir backend</code>
+      </pre>
       <p className="mt-3 text-xs text-muted">{API_HELP.split("\n")[0]}</p>
     </div>
   );
